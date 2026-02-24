@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>☕ Coffee Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --navy:#052D57;
+  --navy-80:rgba(5,45,87,.8);
+  --navy-10:rgba(5,45,87,.08);
+  --navy-05:rgba(5,45,87,.04);
+  --yellow:#FFBD00;
+  --yellow-20:rgba(255,189,0,.18);
+  --yellow-10:rgba(255,189,0,.1);
+  --white:#ffffff;
+  --bg:#F4F6FA;
+  --surface:#ffffff;
+  --border:rgba(5,45,87,.12);
+  --border-strong:rgba(5,45,87,.22);
+  --text:var(--navy);
+  --text-muted:rgba(5,45,87,.5);
+  --danger:#D93025;
+  --green:#1A7A4A;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow:0 1px 3px rgba(5,45,87,.08),0 4px 16px rgba(5,45,87,.06);
+  --shadow-md:0 4px 20px rgba(5,45,87,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;font-size:14px;line-height:1.6;}
+
+/* ── HEADER ── */
+.header{background:var(--navy);color:var(--white);padding:0 0;display:flex;flex-direction:column;}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;gap:12px;}
+.header-logo{display:flex;align-items:center;gap:10px;}
+.header-logo-mark{width:32px;height:32px;background:var(--yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.header-title{font-size:18px;font-weight:700;letter-spacing:.04em;color:var(--white);}
+.header-title span{color:var(--yellow);}
+.header-user-row{display:flex;align-items:center;gap:8px;}
+.user-label{font-size:11px;font-weight:300;color:rgba(255,255,255,.5);letter-spacing:.05em;}
+.user-name-display{font-size:14px;font-weight:500;color:var(--white);}
+.user-switch-btn{font-family:'Noto Sans JP',sans-serif;font-size:11px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white);padding:3px 10px;cursor:pointer;border-radius:20px;transition:background .2s;font-weight:400;}
+.user-switch-btn:hover{background:rgba(255,255,255,.2);}
+.cloud-status{font-size:11px;display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.55);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#e74c3c;flex-shrink:0;}
+.status-dot.ok{background:#2ecc71;}
+.status-dot.syncing{background:var(--yellow);animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── NAV TABS ── */
+.nav-tabs{background:var(--navy);display:flex;padding:0 20px;border-top:1px solid rgba(255,255,255,.1);gap:4px;}
+.nav-tab{font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:400;padding:12px 18px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:rgba(255,255,255,.5);transition:all .2s;margin-bottom:-1px;letter-spacing:.02em;}
+.nav-tab:hover{color:rgba(255,255,255,.85);}
+.nav-tab.active{color:var(--yellow);border-bottom-color:var(--yellow);font-weight:500;}
+
+/* ── PAGES ── */
+.page{display:none;}.page.active{display:block;}
+.layout{max-width:760px;margin:0 auto;padding:28px 20px 80px;}
+
+/* ── MODALS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(5,45,87,.55);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--surface);border-radius:var(--radius);padding:28px 32px;width:min(440px,92vw);animation:slideUp .2s;box-shadow:var(--shadow-md);}
+@keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:4px;color:var(--navy);}
+.modal p{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
+.modal-close{float:right;background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;margin-top:-4px;}
+.user-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.user-chip{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;transition:all .15s;font-size:14px;background:var(--surface);}
+.user-chip:hover{border-color:var(--navy);background:var(--navy-05);}
+.user-chip.selected{border-color:var(--navy);background:var(--navy-10);font-weight:500;}
+.user-chip-del{background:none;border:none;color:var(--border-strong);cursor:pointer;font-size:16px;padding:2px 4px;transition:color .2s;line-height:1;}
+.user-chip-del:hover{color:var(--danger);}
+.modal-divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
+.new-user-row{display:flex;gap:8px;}
+.new-user-row input{flex:1;font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--text);background:transparent;border:none;border-bottom:1.5px solid var(--border);padding:5px 0;outline:none;transition:border-color .2s;}
+.new-user-row input:focus{border-bottom-color:var(--navy);}
+.confirm-modal{background:var(--surface);border-radius:var(--radius);padding:24px 28px;width:min(320px,88vw);animation:slideUp .15s;box-shadow:var(--shadow-md);}
+.confirm-modal p{font-size:15px;color:var(--text);margin-bottom:18px;}
+.confirm-btns{display:flex;gap:8px;justify-content:flex-end;}
+.btn-danger{font-family:'Noto Sans JP',sans-serif;font-size:13px;background:var(--danger);color:#fff;border:none;padding:8px 20px;cursor:pointer;border-radius:var(--radius-sm);font-weight:500;}
+.btn-cancel-sm{font-family:'Noto Sans JP',sans-serif;font-size:13px;background:transparent;color:var(--text-muted);border:1px solid var(--border);padding:8px 14px;cursor:pointer;border-radius:var(--radius-sm);}
+
+/* ── SUPABASE BANNER ── */
+.supabase-banner{background:var(--yellow-10);border:1px solid rgba(255,189,0,.4);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--navy);line-height:1.6;}
+.supabase-banner strong{display:block;margin-bottom:4px;font-weight:600;}
+.supabase-config{display:flex;flex-direction:column;gap:7px;margin-top:10px;}
+.supabase-config input{font-family:monospace;font-size:12px;color:var(--text);background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;outline:none;width:100%;}
+.save-config-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;background:var(--navy);color:var(--yellow);border:none;padding:7px 16px;cursor:pointer;border-radius:var(--radius-sm);align-self:flex-start;font-weight:500;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+.stat-item{background:var(--surface);border-radius:var(--radius);padding:16px 12px;text-align:center;box-shadow:var(--shadow);}
+.stat-num{font-size:28px;font-weight:700;color:var(--navy);display:block;line-height:1;}
+.stat-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:4px;}
+.stat-item.accent{background:var(--navy);}
+.stat-item.accent .stat-num{color:var(--yellow);}
+.stat-item.accent .stat-label{color:rgba(255,255,255,.5);}
+
+/* ── FORM / CARD ── */
+.card{background:var(--surface);border-radius:var(--radius);padding:22px 26px;margin-bottom:24px;box-shadow:var(--shadow);}
+.section-label{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-row.three{grid-template-columns:1fr 1fr 1fr;}
+.form-row.one{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);}
+input[type=text],input[type=date],input[type=datetime-local],input[type=number],select,textarea{
+  font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--text);
+  background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:8px 11px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px var(--navy-10);}
+select{-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23052D57' opacity='.4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;background-color:var(--bg);padding-right:28px;}
+select option{background:var(--white);}
+textarea{resize:none;height:60px;line-height:1.6;}
+
+/* TEMP TOGGLE */
+.toggle-row{display:flex;border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;width:fit-content;background:var(--bg);}
+.toggle-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:7px 18px;background:transparent;border:none;cursor:pointer;color:var(--text-muted);transition:all .15s;font-weight:400;}
+.toggle-btn.active{background:var(--navy);color:var(--white);font-weight:500;}
+
+/* FLAVOR CHIPS */
+.flavor-cat-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;margin-top:2px;}
+.flavor-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.flavor-chip{font-family:'Noto Sans JP',sans-serif;font-size:12px;padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;color:var(--text-muted);background:var(--bg);transition:all .15s;user-select:none;font-weight:400;}
+.flavor-chip:hover{border-color:var(--navy);color:var(--navy);}
+.flavor-chip.selected{background:var(--navy);color:var(--white);border-color:var(--navy);font-weight:500;}
+
+/* STARS */
+.stars-row{display:flex;gap:4px;padding:4px 0;}
+.star{font-size:20px;cursor:pointer;color:var(--border);transition:color .1s,transform .1s;line-height:1;}
+.star.active,.star:hover{color:var(--yellow);transform:scale(1.1);}
+
+/* BUTTONS */
+.btn-primary{font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:600;background:var(--navy);color:var(--white);border:none;padding:9px 22px;cursor:pointer;transition:all .2s;border-radius:var(--radius-sm);}
+.btn-primary:hover{background:#0a3d6e;}
+.add-btn{display:flex;align-items:center;gap:8px;background:var(--navy);color:var(--yellow);border:none;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;padding:10px 26px;cursor:pointer;transition:all .2s;border-radius:var(--radius-sm);letter-spacing:.02em;}
+.add-btn:hover{background:#0a3d6e;transform:translateY(-1px);box-shadow:0 4px 12px rgba(5,45,87,.25);}
+.cancel-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:10px 0;font-weight:400;}
+.cancel-btn:hover{color:var(--text);}
+.form-actions{display:flex;gap:12px;margin-top:18px;align-items:center;}
+
+/* ── JOURNAL ENTRIES ── */
+.journal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.journal-title{font-size:16px;font-weight:700;color:var(--navy);}
+.entry-count{font-size:12px;color:var(--text-muted);font-weight:400;}
+.date-group{margin-bottom:22px;}
+.date-label{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.date-label span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap;}
+.date-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.entry{display:flex;gap:12px;background:var(--surface);border-radius:var(--radius);margin-bottom:8px;padding:14px 16px;animation:fadeIn .25s ease;position:relative;box-shadow:var(--shadow);transition:box-shadow .2s;}
+.entry:hover{box-shadow:var(--shadow-md);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.bullet{flex-shrink:0;width:32px;height:32px;background:var(--navy-10);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px;}
+.entry-body{flex:1;min-width:0;padding-right:56px;}
+.entry-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:5px;}
+.entry-name{font-size:15px;font-weight:700;color:var(--navy);}
+.entry-time{font-size:11px;color:var(--text-muted);flex-shrink:0;background:var(--bg);padding:2px 8px;border-radius:20px;}
+.entry-meta{display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap;}
+.tag{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
+.tag.temp-tag{color:var(--navy);background:var(--navy-10);}
+.tag.process{color:#1a5a8a;background:rgba(26,90,138,.1);}
+.tag.roast-tag{color:#7a5200;background:rgba(255,189,0,.18);}
+.tag.flavor{color:var(--green);background:rgba(26,122,74,.1);}
+.tag.variety{color:#5a3a8a;background:rgba(90,58,138,.1);}
+.entry-rating{color:var(--yellow);font-size:13px;letter-spacing:-.5px;}
+.entry-note{font-size:13px;color:var(--text-muted);line-height:1.55;margin-top:3px;}
+.entry-detail{font-size:11px;color:var(--text-muted);margin-top:3px;font-weight:400;}
+.entry-detail span{color:var(--navy);font-weight:500;}
+.entry-actions{position:absolute;right:12px;top:14px;display:flex;gap:2px;}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--border-strong);font-size:14px;padding:4px 5px;transition:color .2s;line-height:1;border-radius:4px;}
+.icon-btn:hover{color:var(--navy);background:var(--navy-05);}
+.icon-btn.del:hover{color:var(--danger);background:rgba(217,48,37,.07);}
+.edit-form{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:16px 18px;margin-top:10px;}
+.empty{text-align:center;padding:52px 0;color:var(--text-muted);font-size:14px;}
+.empty-icon{font-size:36px;margin-bottom:10px;opacity:.35;}
+
+/* ── MONTHLY ARCHIVE ── */
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.month-display{font-size:20px;font-weight:700;color:var(--navy);}
+.month-btn{background:var(--surface);border:1.5px solid var(--border);color:var(--text-muted);font-size:18px;width:36px;height:36px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);}
+.month-btn:hover{border-color:var(--navy);color:var(--navy);}
+.month-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.month-stat{background:var(--surface);border-radius:var(--radius);text-align:center;padding:14px 8px;box-shadow:var(--shadow);}
+.month-stat-num{font-size:22px;font-weight:700;color:var(--navy);display:block;line-height:1;}
+.month-stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:3px;}
+.month-flavor-bar{background:var(--surface);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow);}
+.month-flavor-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;}
+.flavor-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.flavor-bar-label{font-size:13px;color:var(--text);width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400;}
+.flavor-bar-track{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;}
+.flavor-bar-fill{height:100%;background:var(--yellow);border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.flavor-bar-count{font-size:12px;color:var(--text-muted);width:20px;text-align:right;flex-shrink:0;font-weight:500;}
+.month-entry-row{cursor:pointer;transition:box-shadow .15s;}
+.month-entry-row:hover{box-shadow:var(--shadow-md);}
+
+/* ── BEAN DATABASE ── */
+.bean-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:24px;}
+.bean-card{background:var(--surface);border-radius:var(--radius);padding:18px 20px;position:relative;transition:box-shadow .2s;box-shadow:var(--shadow);}
+.bean-card:hover{box-shadow:var(--shadow-md);}
+.bean-card-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:7px;}
+.bean-card-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.bean-card-note{font-size:12px;color:var(--text-muted);line-height:1.55;}
+.bean-card-actions{position:absolute;top:14px;right:14px;display:flex;gap:2px;}
+.bean-card-stat{font-size:11px;color:var(--text-muted);margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-weight:400;}
+.bean-card-stat span{color:var(--navy);font-weight:600;}
+.bean-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--border);padding:22px;cursor:pointer;color:var(--text-muted);font-family:'Noto Sans JP',sans-serif;font-size:13px;background:transparent;width:100%;transition:all .2s;border-radius:var(--radius);font-weight:400;}
+.bean-add-btn:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-05);}
+
+/* ── IMAGE UPLOAD ── */
+.img-upload-area{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:14px 16px;cursor:pointer;text-align:center;transition:all .2s;margin-bottom:4px;position:relative;background:var(--bg);}
+.img-upload-area:hover{border-color:var(--navy);background:var(--navy-05);}
+.img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.img-upload-label{font-size:13px;color:var(--text-muted);pointer-events:none;font-weight:400;}
+.img-upload-label span{color:var(--navy);font-weight:500;}
+.img-preview-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.img-thumb-wrap{position:relative;width:72px;height:72px;flex-shrink:0;}
+.img-thumb{width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:2px solid var(--border);cursor:pointer;transition:opacity .2s;}
+.img-thumb:hover{opacity:.8;}
+.img-thumb-del{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--navy);color:var(--white);border:none;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;line-height:1;}
+/* entry images */
+.entry-images{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+.entry-img{width:68px;height:68px;object-fit:cover;border-radius:var(--radius-sm);border:2px solid var(--border);cursor:pointer;transition:opacity .2s,transform .15s;}
+.entry-img:hover{opacity:.85;transform:scale(1.05);}
+/* lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(5,45,87,.92);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.lightbox.hidden{display:none;}
+.lightbox img{max-width:92vw;max-height:88vh;object-fit:contain;border-radius:var(--radius-sm);}
+.lightbox-close{position:fixed;top:18px;right:22px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:22px;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.lightbox-close:hover{background:rgba(255,255,255,.25);}
+.lightbox-nav{position:fixed;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:none;color:#fff;font-size:26px;width:44px;height:64px;cursor:pointer;transition:background .2s;border-radius:var(--radius-sm);}
+.lightbox-nav:hover{background:rgba(255,255,255,.22);}
+.lightbox-nav.prev{left:10px;}
+.lightbox-nav.next{right:10px;}
+.lightbox-counter{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.55);font-size:13px;background:rgba(5,45,87,.5);padding:4px 14px;border-radius:20px;}
+
+/* ── LOGIN SCREEN ── */
+.login-screen{position:fixed;inset:0;background:var(--navy);z-index:9000;display:flex;align-items:center;justify-content:center;}
+.login-screen.hidden{display:none;}
+.login-box{background:var(--white);border-radius:16px;padding:48px 40px;width:min(380px,90vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.login-logo{width:56px;height:56px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 20px;}
+.login-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:32px;line-height:1.6;}
+.login-google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 20px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:500;color:var(--navy);transition:all .2s;}
+.login-google-btn:hover{background:var(--bg);border-color:var(--navy);box-shadow:0 2px 8px rgba(5,45,87,.1);}
+.login-google-btn svg{flex-shrink:0;}
+.login-loading{font-size:13px;color:var(--text-muted);margin-top:16px;display:none;}
+.logout-btn{font-family:'Noto Sans JP',sans-serif;font-size:11px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);padding:3px 10px;cursor:pointer;border-radius:20px;transition:background .2s;}
+.logout-btn:hover{background:rgba(255,255,255,.2);}
+.user-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,.3);}
+
+/* ── LOGIN / SETUP SCREEN ── */
+.screen-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--navy);}
+.screen-overlay.hidden{display:none;}
+.login-box{width:min(380px,92vw);padding:40px 36px;background:var(--white);border-radius:16px;box-shadow:0 20px 60px rgba(5,45,87,.3);text-align:center;}
+.login-logo{width:56px;height:56px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;}
+.login-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5;}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:500;color:var(--navy);transition:all .2s;}
+.google-btn:hover{background:var(--bg);border-color:var(--navy);}
+.google-btn svg{flex-shrink:0;}
+.setup-box{width:min(420px,92vw);padding:36px;background:var(--white);border-radius:16px;box-shadow:0 20px 60px rgba(5,45,87,.3);}
+.setup-box h2{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+.setup-box p{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;}
+.setup-field{margin-bottom:12px;}
+.setup-field label{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;}
+.setup-field input{width:100%;font-family:monospace;font-size:12px;color:var(--text);background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;outline:none;}
+.setup-field input:focus{border-color:var(--navy);}
+.setup-btn{width:100%;margin-top:6px;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;background:var(--navy);color:var(--yellow);border:none;padding:12px;border-radius:8px;cursor:pointer;}
+.loading-screen{position:fixed;inset:0;z-index:999;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loading-screen.hidden{display:none;}
+.loading-spinner{width:36px;height:36px;border:3px solid rgba(255,189,0,.3);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:rgba(255,255,255,.6);font-size:13px;}
+
+@media(max-width:540px){
+  .form-row,.form-row.three{grid-template-columns:1fr;}
+  .card{padding:16px 14px;}
+  .stats,.month-summary{grid-template-columns:repeat(2,1fr);}
+  .bean-grid{grid-template-columns:1fr;}
+  .nav-tab{padding:10px 12px;font-size:12px;}
+  .header-top{padding:12px 16px;}
+  .layout{padding:20px 14px 70px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">読み込み中...</div>
+</div>
+
+<!-- SETUP SCREEN (初回のみ) -->
+<div class="screen-overlay hidden" id="setupScreen">
+  <div class="setup-box">
+    <div style="font-size:28px;margin-bottom:12px;">☕</div>
+    <h2>Supabase の設定</h2>
+    <p>最初に1回だけ設定が必要です。<br>Supabase の Project URL と anon key を入力してください。</p>
+    <div class="setup-field">
+      <label>Project URL</label>
+      <input type="text" id="setup-url" placeholder="https://xxxx.supabase.co">
+    </div>
+    <div class="setup-field">
+      <label>Anon Key</label>
+      <input type="text" id="setup-key" placeholder="eyJhbGci...">
+    </div>
+    <button class="setup-btn" onclick="saveSetup()">設定を保存してログインへ</button>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div class="screen-overlay hidden" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">☕</div>
+    <div class="login-title">Coffee Journal</div>
+    <div class="login-sub">あなたのコーヒー記録を<br>どこからでも確認できます</div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/></svg>
+      Google でログイン
+    </button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<!-- USER MODAL removed - using Google Auth -->
+<div class="modal-overlay hidden" id="userModal" style="display:none"></div>
+
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="confirm-modal">
+    <p id="confirmMsg"></p>
+    <div class="confirm-btns">
+      <button class="btn-cancel-sm" onclick="confirmResolve(false)">キャンセル</button>
+      <button class="btn-danger" onclick="confirmResolve(true)">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox hidden" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <button class="lightbox-nav prev" onclick="event.stopPropagation();lightboxStep(-1)">‹</button>
+  <img id="lightboxImg" src="" alt="">
+  <button class="lightbox-nav next" onclick="event.stopPropagation();lightboxStep(1)">›</button>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<!-- BEAN MODAL -->
+<div class="modal-overlay hidden" id="beanModal">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closeBeanModal()">×</button>
+    <h2 id="beanModalTitle">豆を登録</h2>
+    <p style="margin-bottom:16px;">品種・産地などの詳細を記録します</p>
+    <!-- 名前 + 生産国 -->
+    <div class="form-row">
+      <div class="form-group"><label>豆の名前 *</label><input type="text" id="bm-name" placeholder="例: イルガチェフェ G1"></div>
+      <div class="form-group"><label>生産国</label>
+        <select id="bm-country">
+          <option value="">— 未選択 —</option>
+          <option>エチオピア</option><option>ケニア</option><option>コロンビア</option>
+          <option>ブラジル</option><option>グアテマラ</option><option>パナマ</option>
+          <option>コスタリカ</option><option>エルサルバドル</option><option>ホンジュラス</option>
+          <option>ペルー</option><option>ボリビア</option><option>イエメン</option>
+          <option>インドネシア</option><option>ベトナム</option><option>タイ</option>
+          <option>ミャンマー</option><option>インド</option><option>タンザニア</option>
+          <option>ウガンダ</option><option>ルワンダ</option><option>その他</option>
+        </select>
+      </div>
+    </div>
+    <!-- 品種 + 地域 -->
+    <div class="form-row">
+      <div class="form-group"><label>品種 (Variety)</label>
+        <select id="bm-variety">
+          <option value="">— 未選択 —</option>
+          <option>ゲイシャ</option><option>ブルボン</option><option>ティピカ</option>
+          <option>カトゥーラ</option><option>カトゥアイ</option><option>パカマラ</option>
+          <option>SL28</option><option>SL34</option><option>ムンドノーボ</option>
+          <option>マラゴジッペ</option><option>ジャバ</option><option>ケント</option>
+          <option>S795</option><option>ローリナ</option><option>ビジャサルチ</option>
+          <option>ハラー</option><option>ジンマ</option><option>74110</option>
+          <option>74112</option><option>ルイル11</option><option>バティアン</option>
+          <option>コロンビア</option><option>クリオージョ</option><option>その他</option>
+        </select>
+      </div>
+      <div class="form-group"><label>地域 / 農園</label><input type="text" id="bm-region" placeholder="例: イルガチェフェ / Worka"></div>
+    </div>
+    <!-- 標高 + プロセス -->
+    <div class="form-row">
+      <div class="form-group"><label>標高 (masl)</label><input type="number" id="bm-altitude" placeholder="例: 1900"></div>
+      <div class="form-group"><label>プロセス</label>
+        <select id="bm-process">
+          <option value="">— 未選択 —</option>
+          <option>ウォッシュド</option><option>ナチュラル</option>
+          <option>ハニー / パルプドナチュラル</option><option>アナエロビック</option>
+          <option>ウェットハル</option><option>その他</option>
+        </select>
+      </div>
+    </div>
+    <!-- 焙煎度 + 焙煎日 -->
+    <div class="form-row">
+      <div class="form-group"><label>焙煎度</label>
+        <select id="bm-roast">
+          <option value="">— 未選択 —</option>
+          <option>ライト</option><option>シナモン</option><option>ミディアム</option>
+          <option>ハイ</option><option>シティ</option><option>フルシティ</option>
+          <option>フレンチ</option><option>イタリアン</option>
+        </select>
+      </div>
+      <div class="form-group"><label>焙煎日</label><input type="date" id="bm-roastdate"></div>
+    </div>
+    <!-- ロースター -->
+    <div class="form-row one">
+      <div class="form-group full"><label>ロースター / 購入先</label><input type="text" id="bm-roaster" placeholder="例: Light Up Coffee"></div>
+    </div>
+    <div class="form-row one">
+      <div class="form-group full"><label>メモ</label><textarea id="bm-note" placeholder="香り、外観、購入理由など…"></textarea></div>
+    </div>
+    <div class="form-actions" style="margin-top:14px;">
+      <button class="add-btn" onclick="saveBean()">保存</button>
+      <button class="cancel-btn" onclick="closeBeanModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<header class="header">
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="header-logo-mark">☕</div>
+      <span class="header-title">Coffee <span>Journal</span></span>
+    </div>
+    <div class="header-user-row">
+      <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none">
+      <span class="user-name-display" id="userNameDisplay">—</span>
+      <button class="logout-btn" onclick="signOut()">ログアウト</button>
+      <div class="cloud-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">接続中</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('journal')">☕ ジャーナル</button>
+    <button class="nav-tab" onclick="showPage('archive')">📅 月別アーカイブ</button>
+    <button class="nav-tab" onclick="showPage('beans')">🌱 豆データベース</button>
+  </nav>
+</header>
+
+<!-- PAGE: JOURNAL -->
+<div class="page active" id="page-journal">
+<div class="layout">
+
+  <!-- Supabase 接続済み（Google Auth使用） -->
+
+  <div class="stats">
+    <div class="stat-item"><span class="stat-num" id="stat-total">0</span><span class="stat-label">合計</span></div>
+    <div class="stat-item accent"><span class="stat-num" id="stat-today">0</span><span class="stat-label">今日</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-hot">0</span><span class="stat-label">ホット</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-iced">0</span><span class="stat-label">アイス</span></div>
+  </div>
+
+  <div class="card">
+    <span class="section-label">◆ 新しいエントリー</span>
+    <div class="form-row">
+      <div class="form-group"><label>コーヒー名</label><input type="text" id="f-name" placeholder="例: エチオピア イルガチェフェ"></div>
+      <div class="form-group"><label>豆（データベースから）</label>
+        <select id="f-bean-ref" onchange="autofillFromBean()">
+          <option value="">— 未選択 —</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>温度</label>
+        <div class="toggle-row">
+          <button class="toggle-btn active" id="btn-hot" onclick="setTemp('hot')">☕ ホット</button>
+          <button class="toggle-btn" id="btn-iced" onclick="setTemp('iced')">🧊 アイス</button>
+        </div>
+      </div>
+      <div class="form-group"><label>飲んだ日時</label><input type="datetime-local" id="f-datetime"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>場所 / 店舗</label><input type="text" id="f-place" placeholder="例: Blue Bottle 渋谷"></div>
+      <div class="form-group"><label>品種 (Variety)</label>
+        <select id="f-variety">
+          <option value="">— 未選択 —</option>
+          <option>ゲイシャ</option><option>ブルボン</option><option>ティピカ</option>
+          <option>カトゥーラ</option><option>カトゥアイ</option><option>パカマラ</option>
+          <option>SL28</option><option>SL34</option><option>ムンドノーボ</option>
+          <option>マラゴジッペ</option><option>ジャバ</option><option>ケント</option>
+          <option>S795</option><option>ローリナ</option><option>ビジャサルチ</option>
+          <option>ハラー</option><option>ジンマ</option><option>74110</option>
+          <option>74112</option><option>ルイル11</option><option>バティアン</option>
+          <option>コロンビア</option><option>クリオージョ</option><option>その他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row three">
+      <div class="form-group"><label>プロセス</label>
+        <select id="f-process">
+          <option value="">— 未選択 —</option>
+          <option>ウォッシュド</option><option>ナチュラル</option>
+          <option>ハニー / パルプドナチュラル</option><option>アナエロビック</option>
+          <option>ウェットハル</option><option>その他</option>
+        </select>
+      </div>
+      <div class="form-group"><label>焙煎度</label>
+        <select id="f-roast-level">
+          <option value="">— 未選択 —</option>
+          <option>ライト</option><option>シナモン</option><option>ミディアム</option>
+          <option>ハイ</option><option>シティ</option><option>フルシティ</option>
+          <option>フレンチ</option><option>イタリアン</option>
+        </select>
+      </div>
+      <div class="form-group"><label>焙煎日</label><input type="date" id="f-roast-date"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>標高 (masl)</label><input type="number" id="f-altitude" placeholder="例: 1900"></div>
+      <div class="form-group"><!-- spacer --></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;margin-bottom:9px;">フレーバーノート（複数選択可）</label>
+      <div id="flavorCategories"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group full"><label>評価</label>
+        <div class="stars-row" id="stars">
+          <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span>
+          <span class="star" data-v="3">★</span><span class="star" data-v="4">★</span>
+          <span class="star" data-v="5">★</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-row one">
+      <div class="form-group full"><label>自由メモ</label><textarea id="f-note" placeholder="質感、余韻、印象など…"></textarea></div>
+    </div>
+    <div class="form-row one" style="margin-bottom:4px;">
+      <div class="form-group full">
+        <label>写真（複数可）</label>
+        <div class="img-upload-area" id="f-img-area">
+          <input type="file" id="f-images" accept="image/*" multiple onchange="handleImageSelect(event,'f-img-preview')">
+          <div class="img-upload-label">📷 クリックまたはドロップして画像を追加 <span>（JPEG / PNG / WEBP）</span></div>
+        </div>
+        <div class="img-preview-row" id="f-img-preview"></div>
+      </div>
+    </div>
+    <div class="form-actions"><button class="add-btn" onclick="addEntry()">＋ 記録する</button></div>
+  </div>
+
+  <div class="journal-header">
+    <span class="journal-title">Journal</span>
+    <span class="entry-count" id="entry-count"></span>
+  </div>
+  <div id="journal-list"></div>
+</div>
+</div>
+
+<!-- PAGE: ARCHIVE -->
+<div class="page" id="page-archive">
+<div class="layout">
+  <div class="month-nav">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="month-display" id="monthDisplay"></span>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="month-summary">
+    <div class="month-stat"><span class="month-stat-num" id="ms-total">0</span><span class="month-stat-label">合計</span></div>
+    <div class="month-stat"><span class="month-stat-num" id="ms-hot">0</span><span class="month-stat-label">ホット</span></div>
+    <div class="month-stat"><span class="month-stat-num" id="ms-iced">0</span><span class="month-stat-label">アイス</span></div>
+    <div class="month-stat"><span class="month-stat-num" id="ms-avg">—</span><span class="month-stat-label">平均評価</span></div>
+  </div>
+  <div class="month-flavor-bar" id="monthFlavorBar" style="display:none;">
+    <div class="month-flavor-title">◆ よく飲んだフレーバー</div>
+    <div id="monthFlavorBars"></div>
+  </div>
+  <div id="archive-list"></div>
+</div>
+</div>
+
+<!-- PAGE: BEANS -->
+<div class="page" id="page-beans">
+<div class="layout">
+  <div class="journal-header">
+    <span class="journal-title">豆データベース</span>
+    <span class="entry-count" id="bean-count"></span>
+  </div>
+  <div class="bean-grid" id="beanGrid"></div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════
+//  FLAVOR DATA
+// ══════════════════════════════
+const FLAVORS = {
+  'フルーツ系':['ブルーベリー','ストロベリー','ラズベリー','チェリー','プラム','ピーチ','アプリコット','マンゴー','パパイヤ','パイナップル','シトラス','レモン','オレンジ','グレープフルーツ','ライム'],
+  'ナッツ / チョコ':['アーモンド','ヘーゼルナッツ','ウォールナッツ','ダークチョコレート','ミルクチョコレート','カカオニブ','キャラメル','トフィー','バター'],
+  '甘み / スイーツ':['黒糖','ハチミツ','メープルシロップ','バニラ','クリーミー','マジパン','ブラウンシュガー'],
+  'フローラル / ハーブ':['ジャスミン','ラベンダー','ローズ','エルダーフラワー','カモミール','ハーブ','紅茶'],
+  'スパイス':['シナモン','クローブ','カルダモン','ブラックペッパー','ナツメグ'],
+  'その他':['アーシー','ウッディ','スモーキー','ワイニー','発酵感','穀物'],
+};
+
+// ══════════════════════════════
+//  STATE
+// ══════════════════════════════
+let sb = null;           // Supabase client
+let currentUser = null;  // auth user object
+let entries = [];
+let beans = [];
+let selectedFlavors = new Set();
+let pendingImages = [];
+let rating = 0;
+let temp = 'hot';
+let editingId = null;
+let archiveMonth = { y: new Date().getFullYear(), m: new Date().getMonth() };
+let editingBeanId = null;
+
+// ══════════════════════════════
+//  SUPABASE INIT & AUTH
+// ══════════════════════════════
+function getConfig() {
+  return {
+    url: localStorage.getItem('cj-sb-url') || '',
+    key: localStorage.getItem('cj-sb-key') || ''
+  };
+}
+
+function saveSetup() {
+  const url = document.getElementById('setup-url').value.trim().replace(/\/$/,'');
+  const key = document.getElementById('setup-key').value.trim();
+  if (!url || !key) { alert('URLとKeyを入力してください'); return; }
+  localStorage.setItem('cj-sb-url', url);
+  localStorage.setItem('cj-sb-key', key);
+  location.reload();
+}
+
+async function signInWithGoogle() {
+  if (!sb) return;
+  const redirectTo = window.location.href.split('?')[0].split('#')[0];
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  });
+}
+
+async function signOut() {
+  if (!sb) return;
+  await sb.auth.signOut();
+}
+
+function showLoadingScreen(v) {
+  document.getElementById('loadingScreen').classList.toggle('hidden', !v);
+}
+function showSetupScreen() {
+  showLoadingScreen(false);
+  document.getElementById('setupScreen').classList.remove('hidden');
+  document.getElementById('loginScreen').classList.add('hidden');
+}
+function showLoginScreen() {
+  showLoadingScreen(false);
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('setupScreen').classList.add('hidden');
+}
+function showApp(user) {
+  showLoadingScreen(false);
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('setupScreen').classList.add('hidden');
+  currentUser = user;
+  // ユーザー情報をヘッダーに反映
+  const name = user.user_metadata?.full_name || user.email || 'ユーザー';
+  const avatar = user.user_metadata?.avatar_url;
+  document.getElementById('userNameDisplay').textContent = name;
+  const avatarEl = document.getElementById('userAvatar');
+  if (avatar) { avatarEl.src = avatar; avatarEl.style.display = 'block'; }
+  setStatus('ok', '同期済');
+  loadAll();
+}
+
+// ── STARTUP ──
+async function startup() {
+  showLoadingScreen(true);
+  const { url, key } = getConfig();
+  if (!url || !key) { showSetupScreen(); return; }
+
+  // Supabase クライアント初期化
+  sb = window.supabase.createClient(url, key);
+
+  // 認証状態の変化を監視
+  sb.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      showApp(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showLoginScreen();
+    }
+  });
+
+  // 初回セッション確認
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    showApp(session.user);
+  } else {
+    showLoginScreen();
+  }
+}
+
+// ══════════════════════════════
+//  DATA: LOAD & SAVE
+// ══════════════════════════════
+async function loadAll() {
+  if (!sb || !currentUser) return;
+  setStatus('syncing', '同期中...');
+  try {
+    const [{ data: eData, error: eErr }, { data: bData, error: bErr }] = await Promise.all([
+      sb.from('coffee_entries').select('*').order('drunk_at', { ascending: false }),
+      sb.from('coffee_beans').select('*').order('created_at', { ascending: false })
+    ]);
+    if (eErr) throw eErr;
+    if (bErr) throw bErr;
+    entries = (eData || []).map(r => ({
+      id: String(r.id), name: r.name, temp: r.temp || 'hot',
+      place: r.place || '', datetime: r.drunk_at,
+      process: r.process || '', roastLevel: r.roast_level || '',
+      roastDate: r.roast_date || '', variety: r.variety || '',
+      altitude: r.altitude || '', flavors: r.flavors || [],
+      images: r.images || [], note: r.note || '',
+      rating: r.rating || 0, beanId: r.bean_id || ''
+    }));
+    beans = (bData || []).map(r => ({
+      id: String(r.id), name: r.name, variety: r.variety || '',
+      country: r.country || '', region: r.region || '',
+      altitude: r.altitude || '', process: r.process || '',
+      roastLevel: r.roast_level || '', roastDate: r.roast_date || '',
+      roaster: r.roaster || '', note: r.note || ''
+    }));
+    setStatus('ok', '同期済');
+  } catch(e) {
+    console.error(e);
+    setStatus('error', 'エラー');
+  }
+  renderJournal(); renderBeanSelect(); renderBeans();
+}
+
+// ══════════════════════════════
+//  ENTRY CRUD
+// ══════════════════════════════
+async function addEntry() {
+  if (!sb || !currentUser) return;
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); return; }
+  const dt = document.getElementById('f-datetime').value;
+  const row = {
+    user_id: currentUser.id,
+    name, temp,
+    place: document.getElementById('f-place').value.trim(),
+    drunk_at: dt ? new Date(dt).toISOString() : new Date().toISOString(),
+    process: document.getElementById('f-process').value,
+    roast_level: document.getElementById('f-roast-level').value,
+    roast_date: document.getElementById('f-roast-date').value || null,
+    variety: document.getElementById('f-variety').value,
+    altitude: document.getElementById('f-altitude').value ? Number(document.getElementById('f-altitude').value) : null,
+    flavors: [...selectedFlavors],
+    images: pendingImages.map(i => i.dataUrl),
+    note: document.getElementById('f-note').value.trim(),
+    rating,
+    bean_id: document.getElementById('f-bean-ref').value || null
+  };
+  setStatus('syncing', '保存中...');
+  const { data, error } = await sb.from('coffee_entries').insert(row).select().single();
+  if (error) { console.error(error); setStatus('error', '保存エラー'); return; }
+  entries.unshift({
+    id: String(data.id), name: data.name, temp: data.temp,
+    place: data.place || '', datetime: data.drunk_at,
+    process: data.process || '', roastLevel: data.roast_level || '',
+    roastDate: data.roast_date || '', variety: data.variety || '',
+    altitude: data.altitude || '', flavors: data.flavors || [],
+    images: data.images || [], note: data.note || '',
+    rating: data.rating || 0, beanId: data.bean_id || ''
+  });
+  setStatus('ok', '同期済');
+  renderJournal(); resetForm();
+}
+
+async function deleteEntry(id) {
+  const ok = await showConfirm('このエントリーを削除しますか？');
+  if (!ok) return;
+  const { error } = await sb.from('coffee_entries').delete().eq('id', id);
+  if (error) { console.error(error); setStatus('error', '削除エラー'); return; }
+  entries = entries.filter(e => e.id !== id);
+  setStatus('ok', '同期済');
+  renderJournal();
+}
+
+function startEdit(id) { editingId = id; renderJournal(); }
+function cancelEdit() { editingId = null; renderJournal(); }
+
+async function saveEdit(id) {
+  const idx = entries.findIndex(e => e.id === id);
+  if (idx < 0) return;
+  const e = entries[idx];
+  const hb = document.querySelector(`[data-etid="${id}"][data-tv="hot"]`);
+  let nr = 0;
+  document.querySelectorAll(`[data-esid="${id}"]`).forEach(s => { if (s.classList.contains('active')) nr = +s.dataset.sv; });
+  const newImages = (window._editImages !== null && window._editImages !== undefined)
+    ? window._editImages.map(i => i.dataUrl || i)
+    : (e.images || []);
+  const row = {
+    name: document.getElementById('ee-name-'+id).value.trim() || e.name,
+    temp: hb && hb.classList.contains('active') ? 'hot' : 'iced',
+    place: document.getElementById('ee-place-'+id).value.trim(),
+    drunk_at: (() => { const v = document.getElementById('ee-dt-'+id).value; return v ? new Date(v).toISOString() : e.datetime; })(),
+    process: document.getElementById('ee-process-'+id).value,
+    roast_level: document.getElementById('ee-rl-'+id).value,
+    roast_date: document.getElementById('ee-rd-'+id).value || null,
+    variety: document.getElementById('ee-variety-'+id).value.trim(),
+    note: document.getElementById('ee-note-'+id).value.trim(),
+    flavors: [...(window._editFlavors || new Set())],
+    images: newImages,
+    rating: nr || e.rating
+  };
+  setStatus('syncing', '更新中...');
+  const { error } = await sb.from('coffee_entries').update(row).eq('id', id);
+  if (error) { console.error(error); setStatus('error', '更新エラー'); return; }
+  Object.assign(e, {
+    name: row.name, temp: row.temp, place: row.place,
+    datetime: row.drunk_at, process: row.process,
+    roastLevel: row.roast_level, roastDate: row.roast_date || '',
+    variety: row.variety, note: row.note,
+    flavors: row.flavors, images: row.images, rating: row.rating
+  });
+  setStatus('ok', '同期済');
+  editingId = null; window._editFlavors = null; window._editImages = null;
+  renderJournal();
+}
+
+// ══════════════════════════════
+//  BEAN CRUD
+// ══════════════════════════════
+function openBeanModal(id) {
+  editingBeanId = id || null;
+  document.getElementById('beanModalTitle').textContent = id ? '豆を編集' : '豆を登録';
+  if (id) {
+    const b = beans.find(b => b.id === id);
+    if (b) {
+      document.getElementById('bm-name').value = b.name;
+      document.getElementById('bm-variety').value = b.variety || '';
+      document.getElementById('bm-country').value = b.country || '';
+      document.getElementById('bm-region').value = b.region || '';
+      document.getElementById('bm-altitude').value = b.altitude || '';
+      document.getElementById('bm-process').value = b.process || '';
+      document.getElementById('bm-roast').value = b.roastLevel || '';
+      document.getElementById('bm-roastdate').value = b.roastDate || '';
+      document.getElementById('bm-roaster').value = b.roaster || '';
+      document.getElementById('bm-note').value = b.note || '';
+    }
+  } else {
+    ['bm-name','bm-region','bm-altitude','bm-roaster','bm-note','bm-roastdate'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
+    ['bm-variety','bm-country','bm-process','bm-roast'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
+  }
+  document.getElementById('beanModal').classList.remove('hidden');
+}
+function closeBeanModal() { document.getElementById('beanModal').classList.add('hidden'); editingBeanId = null; }
+
+async function saveBean() {
+  if (!sb || !currentUser) return;
+  const name = document.getElementById('bm-name').value.trim();
+  if (!name) { document.getElementById('bm-name').focus(); return; }
+  const row = {
+    user_id: currentUser.id,
+    name,
+    variety: document.getElementById('bm-variety').value,
+    country: document.getElementById('bm-country').value,
+    region: document.getElementById('bm-region').value.trim(),
+    altitude: document.getElementById('bm-altitude').value ? Number(document.getElementById('bm-altitude').value) : null,
+    process: document.getElementById('bm-process').value,
+    roast_level: document.getElementById('bm-roast').value,
+    roast_date: document.getElementById('bm-roastdate').value || null,
+    roaster: document.getElementById('bm-roaster').value.trim(),
+    note: document.getElementById('bm-note').value.trim()
+  };
+  setStatus('syncing', '保存中...');
+  if (editingBeanId) {
+    const { error } = await sb.from('coffee_beans').update(row).eq('id', editingBeanId);
+    if (error) { console.error(error); setStatus('error', '保存エラー'); return; }
+    const i = beans.findIndex(b => b.id === editingBeanId);
+    if (i >= 0) beans[i] = { ...beans[i], ...row, id: editingBeanId, roastLevel: row.roast_level, roastDate: row.roast_date || '' };
+  } else {
+    const { data, error } = await sb.from('coffee_beans').insert(row).select().single();
+    if (error) { console.error(error); setStatus('error', '保存エラー'); return; }
+    beans.unshift({ id: String(data.id), name: data.name, variety: data.variety || '', country: data.country || '', region: data.region || '', altitude: data.altitude || '', process: data.process || '', roastLevel: data.roast_level || '', roastDate: data.roast_date || '', roaster: data.roaster || '', note: data.note || '' });
+  }
+  setStatus('ok', '同期済');
+  closeBeanModal(); renderBeans(); renderBeanSelect();
+}
+
+async function deleteBean(id) {
+  const ok = await showConfirm('この豆を削除しますか？');
+  if (!ok) return;
+  const { error } = await sb.from('coffee_beans').delete().eq('id', id);
+  if (error) { console.error(error); setStatus('error', '削除エラー'); return; }
+  beans = beans.filter(b => b.id !== id);
+  setStatus('ok', '同期済');
+  renderBeans(); renderBeanSelect();
+}
+
+// ══════════════════════════════
+//  CONFIRM DIALOG
+// ══════════════════════════════
+let _confirmResolve = null;
+function showConfirm(msg) {
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmModal').classList.remove('hidden');
+  return new Promise(r => { _confirmResolve = r; });
+}
+function confirmResolve(v) {
+  document.getElementById('confirmModal').classList.add('hidden');
+  if (_confirmResolve) { _confirmResolve(v); _confirmResolve = null; }
+}
+
+// ══════════════════════════════
+//  PAGE NAV
+// ══════════════════════════════
+const navBtns = document.querySelectorAll('.nav-tab');
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  navBtns.forEach((b,i) => b.classList.toggle('active', ['journal','archive','beans'][i] === name));
+  if (name === 'archive') renderArchive();
+  if (name === 'beans') renderBeans();
+}
+
+// ══════════════════════════════
+//  FORM HELPERS
+// ══════════════════════════════
+function setTemp(t) {
+  temp = t;
+  document.getElementById('btn-hot').classList.toggle('active', t === 'hot');
+  document.getElementById('btn-iced').classList.toggle('active', t === 'iced');
+}
+
+function setupStars(rowId, getVal, setVal) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  row.querySelectorAll('.star').forEach(s => {
+    s.addEventListener('click', () => { setVal(+s.dataset.v); refreshStars(rowId, getVal()); });
+    s.addEventListener('mouseover', () => row.querySelectorAll('.star').forEach(x => x.classList.toggle('active', +x.dataset.v <= +s.dataset.v)));
+    s.addEventListener('mouseout', () => refreshStars(rowId, getVal()));
+  });
+}
+function refreshStars(rowId, val) {
+  document.getElementById(rowId)?.querySelectorAll('.star').forEach(x => x.classList.toggle('active', +x.dataset.v <= val));
+}
+
+function autofillFromBean() {
+  const beanId = document.getElementById('f-bean-ref').value;
+  if (!beanId) return;
+  const b = beans.find(b => b.id === beanId);
+  if (!b) return;
+  if (!document.getElementById('f-name').value) document.getElementById('f-name').value = b.name;
+  if (!document.getElementById('f-variety').value) document.getElementById('f-variety').value = b.variety || '';
+  if (!document.getElementById('f-process').value) document.getElementById('f-process').value = b.process || '';
+  if (!document.getElementById('f-roast-level').value) document.getElementById('f-roast-level').value = b.roastLevel || '';
+  if (!document.getElementById('f-roast-date').value) document.getElementById('f-roast-date').value = b.roastDate || '';
+  if (!document.getElementById('f-altitude').value) document.getElementById('f-altitude').value = b.altitude || '';
+}
+
+function resetForm() {
+  ['f-name','f-place','f-note','f-roast-date'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-process','f-roast-level','f-bean-ref','f-variety'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const alt = document.getElementById('f-altitude'); if(alt) alt.value = '';
+  pendingImages = [];
+  const prev = document.getElementById('f-img-preview'); if(prev) prev.innerHTML = '';
+  rating = 0; temp = 'hot'; selectedFlavors = new Set();
+  setTemp('hot'); refreshStars('stars', 0);
+  buildFlavorUI('flavorCategories');
+  const n = new Date(); n.setMinutes(n.getMinutes()-n.getTimezoneOffset());
+  document.getElementById('f-datetime').value = n.toISOString().slice(0,16);
+}
+document.getElementById('f-name').addEventListener('keydown', e => { if(e.key === 'Enter') addEntry(); });
+
+// ══════════════════════════════
+//  FLAVOR UI
+// ══════════════════════════════
+function buildFlavorUI(containerId, currentSel) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const selSet = currentSel instanceof Set ? currentSel : new Set(Array.isArray(currentSel) ? currentSel : []);
+  el.innerHTML = Object.entries(FLAVORS).map(([cat,items]) => `
+    <div class="flavor-cat-label">${cat}</div>
+    <div class="flavor-chips">${items.map(f=>`<button type="button" class="flavor-chip${selSet.has(f)?' selected':''}" data-f="${escAttr(f)}" data-cid="${containerId}">${escHTML(f)}</button>`).join('')}</div>
+  `).join('');
+  el.querySelectorAll('.flavor-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.f;
+      const set = btn.dataset.cid === 'flavorCategories' ? selectedFlavors : window._editFlavors;
+      if (!set) return;
+      set.has(f) ? set.delete(f) : set.add(f);
+      btn.classList.toggle('selected', set.has(f));
+    });
+  });
+}
+
+// ══════════════════════════════
+//  IMAGE HANDLING
+// ══════════════════════════════
+function processImageFile(file, callback) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200; let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) { if (w > h) { h=Math.round(h*MAX/w); w=MAX; } else { w=Math.round(w*MAX/h); h=MAX; } }
+      const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      callback(canvas.toDataURL('image/jpeg', 0.82), file.name);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleImageSelect(event, previewId) {
+  Array.from(event.target.files).filter(f=>f.type.startsWith('image/')).forEach(file => {
+    processImageFile(file, (dataUrl, name) => {
+      pendingImages.push({ dataUrl, name });
+      renderImagePreview(previewId, pendingImages, true);
+    });
+  });
+  event.target.value = '';
+}
+
+function handleEditImageSelect(event, entryId) {
+  Array.from(event.target.files).filter(f=>f.type.startsWith('image/')).forEach(file => {
+    processImageFile(file, (dataUrl, name) => {
+      if (!window._editImages) window._editImages = [];
+      window._editImages.push({ dataUrl, name });
+      renderImagePreview('ei-preview-'+entryId, window._editImages, false, entryId);
+    });
+  });
+  event.target.value = '';
+}
+
+function renderImagePreview(containerId, images, isPending, editId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = images.map((img, i) => `
+    <div class="img-thumb-wrap">
+      <img class="img-thumb" src="${img.dataUrl||img}" onclick="openLightbox(${JSON.stringify(images.map(x=>x.dataUrl||x))},${i})">
+      <button class="img-thumb-del" onclick="${isPending?`removePendingImage(${i},'${containerId}')`:`removeEditImage(${i},'${escAttr(containerId)}','${escAttr(editId||'')}')`}">×</button>
+    </div>`).join('');
+}
+
+function removePendingImage(idx, previewId) { pendingImages.splice(idx,1); renderImagePreview(previewId, pendingImages, true); }
+function removeEditImage(idx, previewId, entryId) { if(!window._editImages)return; window._editImages.splice(idx,1); renderImagePreview(previewId, window._editImages, false, entryId); }
+
+function setupImageDrop(areaId, previewId) {
+  const area = document.getElementById(areaId);
+  if (!area) return;
+  area.addEventListener('dragover', e => { e.preventDefault(); area.style.borderColor='var(--yellow)'; });
+  area.addEventListener('dragleave', () => { area.style.borderColor=''; });
+  area.addEventListener('drop', e => {
+    e.preventDefault(); area.style.borderColor='';
+    Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')).forEach(file => {
+      processImageFile(file, (dataUrl, name) => { pendingImages.push({dataUrl,name}); renderImagePreview(previewId, pendingImages, true); });
+    });
+  });
+}
+
+// ── LIGHTBOX ──
+let _lbImages = [], _lbIdx = 0;
+function openLightbox(images, idx) {
+  _lbImages = Array.isArray(images) ? images : [images]; _lbIdx = idx||0;
+  updateLightbox();
+  document.getElementById('lightbox').classList.remove('hidden');
+  document.addEventListener('keydown', lightboxKey);
+}
+function closeLightbox() { document.getElementById('lightbox').classList.add('hidden'); document.removeEventListener('keydown', lightboxKey); }
+function lightboxStep(d) { _lbIdx = (_lbIdx+d+_lbImages.length)%_lbImages.length; updateLightbox(); }
+function updateLightbox() {
+  document.getElementById('lightboxImg').src = _lbImages[_lbIdx];
+  document.getElementById('lightboxCounter').textContent = _lbImages.length>1 ? `${_lbIdx+1} / ${_lbImages.length}` : '';
+  document.querySelector('.lightbox-nav.prev').style.display = _lbImages.length>1?'':'none';
+  document.querySelector('.lightbox-nav.next').style.display = _lbImages.length>1?'':'none';
+}
+function lightboxKey(e) { if(e.key==='Escape')closeLightbox(); if(e.key==='ArrowLeft')lightboxStep(-1); if(e.key==='ArrowRight')lightboxStep(1); }
+
+// ══════════════════════════════
+//  STATUS
+// ══════════════════════════════
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot'+(state==='ok'?' ok':state==='syncing'?' syncing':'');
+  document.getElementById('statusText').textContent = text;
+}
+
+// ══════════════════════════════
+//  RENDER: JOURNAL
+// ══════════════════════════════
+function renderJournal() {
+  const list = document.getElementById('journal-list');
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">☕</div>まだ記録がありません。<br>最初の一杯を記録しましょう。</div>`;
+  } else {
+    const groups = {};
+    entries.forEach(e => { const d=(e.datetime||'').split('T')[0]; (groups[d]=groups[d]||[]).push(e); });
+    list.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date => {
+      const label = formatDate(new Date(date+'T12:00:00'));
+      return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${groups[date].map(renderEntryCard).join('')}</div>`;
+    }).join('');
+  }
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('stat-total').textContent = entries.length;
+  document.getElementById('stat-today').textContent = entries.filter(e=>(e.datetime||'').startsWith(today)).length;
+  document.getElementById('stat-hot').textContent = entries.filter(e=>e.temp==='hot').length;
+  document.getElementById('stat-iced').textContent = entries.filter(e=>e.temp==='iced').length;
+  document.getElementById('entry-count').textContent = entries.length+' 件';
+  // bind edit stars
+  document.querySelectorAll('[data-esid]').forEach(s => {
+    s.addEventListener('click', () => { const sid=s.dataset.esid; document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=+s.dataset.sv)); });
+    s.addEventListener('mouseover', () => { const sid=s.dataset.esid; document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=+s.dataset.sv)); });
+    s.addEventListener('mouseout', () => { const sid=s.dataset.esid; let cur=0; document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>{if(x.classList.contains('active'))cur=Math.max(cur,+x.dataset.sv);}); document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=cur)); });
+  });
+}
+
+function renderEntryCard(e) {
+  const icon = e.temp==='iced'?'🧊':'☕';
+  const timeStr = e.datetime ? formatTime(new Date(e.datetime)) : '';
+  const roastDays = e.roastDate ? Math.floor((new Date()-new Date(e.roastDate+'T12:00:00'))/86400000) : null;
+  const flavors = e.flavors||[];
+
+  if (editingId === e.id) {
+    window._editFlavors = new Set(flavors);
+    window._editImages = (e.images||[]).map(src => ({dataUrl:src, name:'photo'}));
+    const dtLocal = e.datetime?(()=>{const d=new Date(e.datetime);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);})():'';
+    const pOpts = ['ウォッシュド','ナチュラル','ハニー / パルプドナチュラル','アナエロビック','ウェットハル','その他'];
+    const rOpts = ['ライト','シナモン','ミディアム','ハイ','シティ','フルシティ','フレンチ','イタリアン'];
+    const editFlavHtml = Object.entries(FLAVORS).map(([cat,items])=>`
+      <div class="flavor-cat-label">${cat}</div>
+      <div class="flavor-chips">${items.map(f=>`<button type="button" class="flavor-chip${flavors.includes(f)?' selected':''}" data-f="${escAttr(f)}" data-cid="ef-${e.id}">${escHTML(f)}</button>`).join('')}</div>
+    `).join('');
+    setTimeout(()=>{
+      document.getElementById('ef-'+e.id)?.querySelectorAll('.flavor-chip').forEach(btn=>{
+        btn.addEventListener('click',()=>{ const f=btn.dataset.f; window._editFlavors.has(f)?window._editFlavors.delete(f):window._editFlavors.add(f); btn.classList.toggle('selected',window._editFlavors.has(f)); });
+      });
+      if(window._editImages&&window._editImages.length) renderImagePreview('ei-preview-'+e.id, window._editImages, false, e.id);
+    },0);
+    return `
+    <div class="entry" id="entry-${e.id}">
+      <div class="bullet">${icon}</div>
+      <div class="entry-body" style="padding-right:0">
+        <div class="edit-form">
+          <div class="form-row">
+            <div class="form-group"><label>コーヒー名</label><input type="text" id="ee-name-${e.id}" value="${escAttr(e.name)}"></div>
+            <div class="form-group"><label>温度</label>
+              <div class="toggle-row">
+                <button type="button" class="toggle-btn ${e.temp==='hot'?'active':''}" data-etid="${e.id}" data-tv="hot" onclick="this.classList.add('active');this.nextElementSibling.classList.remove('active')">☕ ホット</button>
+                <button type="button" class="toggle-btn ${e.temp==='iced'?'active':''}" data-etid="${e.id}" data-tv="iced" onclick="this.classList.add('active');this.previousElementSibling.classList.remove('active')">🧊 アイス</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>飲んだ日時</label><input type="datetime-local" id="ee-dt-${e.id}" value="${dtLocal}"></div>
+            <div class="form-group"><label>場所</label><input type="text" id="ee-place-${e.id}" value="${escAttr(e.place||'')}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>品種</label>
+              <select id="ee-variety-${e.id}"><option value="">—</option><option>ゲイシャ</option><option>ブルボン</option><option>ティピカ</option><option>カトゥーラ</option><option>カトゥアイ</option><option>パカマラ</option><option>SL28</option><option>SL34</option><option>ムンドノーボ</option><option>マラゴジッペ</option><option>ジャバ</option><option>ケント</option><option>S795</option><option>ローリナ</option><option>ビジャサルチ</option><option>ハラー</option><option>ジンマ</option><option>74110</option><option>74112</option><option>ルイル11</option><option>バティアン</option><option>コロンビア</option><option>クリオージョ</option><option>その他</option></select>
+            </div>
+            <div class="form-group"><label>プロセス</label>
+              <select id="ee-process-${e.id}"><option value="">—</option>${pOpts.map(p=>`<option ${e.process===p?'selected':''}>${p}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>焙煎度</label>
+              <select id="ee-rl-${e.id}"><option value="">—</option>${rOpts.map(r=>`<option ${e.roastLevel===r?'selected':''}>${r}</option>`).join('')}</select>
+            </div>
+            <div class="form-group"><label>焙煎日</label><input type="date" id="ee-rd-${e.id}" value="${e.roastDate||''}"></div>
+          </div>
+          <div style="margin-bottom:12px"><label style="display:block;margin-bottom:8px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);">フレーバーノート</label><div id="ef-${e.id}">${editFlavHtml}</div></div>
+          <div class="form-group" style="margin-bottom:11px"><label>評価</label>
+            <div class="stars-row">${[1,2,3,4,5].map(v=>`<span class="star ${e.rating>=v?'active':''}" data-esid="${e.id}" data-sv="${v}">★</span>`).join('')}</div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px"><label>メモ</label><textarea id="ee-note-${e.id}">${escHTML(e.note||'')}</textarea></div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label>写真</label>
+            <div class="img-upload-area" style="margin-top:5px;">
+              <input type="file" accept="image/*" multiple onchange="handleEditImageSelect(event,'${e.id}')">
+              <div class="img-upload-label">📷 クリックして追加</div>
+            </div>
+            <div class="img-preview-row" id="ei-preview-${e.id}"></div>
+          </div>
+          <div class="form-actions">
+            <button class="add-btn" onclick="saveEdit('${e.id}')">保存</button>
+            <button class="cancel-btn" onclick="cancelEdit()">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return `
+  <div class="entry" id="entry-${e.id}">
+    <div class="bullet">${icon}</div>
+    <div class="entry-body">
+      <div class="entry-top">
+        <span class="entry-name">${escHTML(e.name)}</span>
+        <span class="entry-time">${timeStr}</span>
+      </div>
+      <div class="entry-meta">
+        <span class="tag temp-tag">${e.temp==='iced'?'アイス':'ホット'}</span>
+        ${e.variety?`<span class="tag variety">🌿 ${escHTML(e.variety)}</span>`:''}
+        ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
+        ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
+        ${e.roastLevel?`<span class="tag roast-tag">${escHTML(e.roastLevel)}</span>`:''}
+        ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+      </div>
+      ${flavors.length?`<div class="entry-meta">${flavors.map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('')}</div>`:''}
+      ${roastDays!==null?`<div class="entry-detail">焙煎: <span>${e.roastDate}（${roastDays}日前）</span></div>`:''}
+      ${e.altitude?`<div class="entry-detail">標高: <span>${e.altitude} masl</span></div>`:''}
+      ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
+      ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
+    </div>
+    <div class="entry-actions">
+      <button class="icon-btn" onclick="startEdit('${e.id}')" title="編集">✎</button>
+      <button class="icon-btn del" onclick="deleteEntry('${e.id}')" title="削除">✕</button>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════
+//  RENDER: ARCHIVE
+// ══════════════════════════════
+function changeMonth(delta) {
+  archiveMonth.m += delta;
+  if (archiveMonth.m > 11) { archiveMonth.m=0; archiveMonth.y++; }
+  if (archiveMonth.m < 0) { archiveMonth.m=11; archiveMonth.y--; }
+  renderArchive();
+}
+
+function renderArchive() {
+  const {y,m} = archiveMonth;
+  document.getElementById('monthDisplay').textContent = `${y}年 ${m+1}月`;
+  const prefix = `${y}-${String(m+1).padStart(2,'0')}`;
+  const mEntries = entries.filter(e=>(e.datetime||'').startsWith(prefix));
+  document.getElementById('ms-total').textContent = mEntries.length;
+  document.getElementById('ms-hot').textContent = mEntries.filter(e=>e.temp==='hot').length;
+  document.getElementById('ms-iced').textContent = mEntries.filter(e=>e.temp==='iced').length;
+  const rated = mEntries.filter(e=>e.rating>0);
+  document.getElementById('ms-avg').textContent = rated.length ? (rated.reduce((s,e)=>s+e.rating,0)/rated.length).toFixed(1) : '—';
+  const flavorCount = {};
+  mEntries.forEach(e=>(e.flavors||[]).forEach(f=>{ flavorCount[f]=(flavorCount[f]||0)+1; }));
+  const topFlavors = Object.entries(flavorCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const flavorBar = document.getElementById('monthFlavorBar');
+  if (topFlavors.length>0) {
+    flavorBar.style.display='block';
+    const max = topFlavors[0][1];
+    document.getElementById('monthFlavorBars').innerHTML = topFlavors.map(([f,c])=>`
+      <div class="flavor-bar-row">
+        <span class="flavor-bar-label">${escHTML(f)}</span>
+        <div class="flavor-bar-track"><div class="flavor-bar-fill" style="width:${Math.round(c/max*100)}%"></div></div>
+        <span class="flavor-bar-count">${c}</span>
+      </div>`).join('');
+  } else { flavorBar.style.display='none'; }
+  const archList = document.getElementById('archive-list');
+  if (mEntries.length===0) { archList.innerHTML=`<div class="empty"><div class="empty-icon">📅</div>この月の記録はありません</div>`; return; }
+  const groups = {};
+  mEntries.forEach(e=>{const d=(e.datetime||'').split('T')[0];(groups[d]=groups[d]||[]).push(e);});
+  archList.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
+    const label = formatDate(new Date(date+'T12:00:00'));
+    const items = groups[date].map(e=>`
+      <div class="month-entry-row entry" onclick="goToEntry('${e.id}')">
+        <div class="bullet">${e.temp==='iced'?'🧊':'☕'}</div>
+        <div class="entry-body" style="padding-right:48px">
+          <div class="entry-top">
+            <span class="entry-name">${escHTML(e.name)}</span>
+            <span class="entry-time">${e.datetime?formatTime(new Date(e.datetime)):''}</span>
+          </div>
+          <div class="entry-meta">
+            ${e.variety?`<span class="tag variety">🌿 ${escHTML(e.variety)}</span>`:''}
+            ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
+            ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
+            ${e.roastLevel?`<span class="tag roast-tag">${escHTML(e.roastLevel)}</span>`:''}
+            ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+          </div>
+          ${(e.flavors||[]).length?`<div class="entry-meta">${e.flavors.slice(0,4).map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('')}${e.flavors.length>4?`<span class="tag flavor">+${e.flavors.length-4}</span>`:''}</div>`:''}
+          ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
+        </div>
+        <div class="entry-actions">
+          <button class="icon-btn del" onclick="event.stopPropagation();deleteEntry('${e.id}').then(()=>renderArchive())" title="削除">✕</button>
+        </div>
+      </div>`).join('');
+    return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${items}</div>`;
+  }).join('');
+}
+
+function goToEntry(id) {
+  showPage('journal');
+  setTimeout(()=>{ const el=document.getElementById('entry-'+id); if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='var(--navy-05)';setTimeout(()=>{el.style.background='';},1200);} },100);
+}
+
+// ══════════════════════════════
+//  RENDER: BEANS
+// ══════════════════════════════
+function renderBeanSelect() {
+  const sel = document.getElementById('f-bean-ref');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— 豆データベースから選択 —</option>'+beans.map(b=>`<option value="${b.id}" ${b.id===cur?'selected':''}>${escHTML(b.name)}${b.variety?' ('+escHTML(b.variety)+')':''}</option>`).join('');
+}
+
+function renderBeans() {
+  const grid = document.getElementById('beanGrid');
+  document.getElementById('bean-count').textContent = beans.length+' 種';
+  const cards = beans.map(b => {
+    const usedCount = entries.filter(e=>e.beanId===b.id).length;
+    const roastDays = b.roastDate?Math.floor((new Date()-new Date(b.roastDate+'T12:00:00'))/86400000):null;
+    return `
+    <div class="bean-card">
+      <div class="bean-card-actions">
+        <button class="icon-btn" onclick="openBeanModal('${b.id}')" title="編集">✎</button>
+        <button class="icon-btn del" onclick="deleteBean('${b.id}')" title="削除">✕</button>
+      </div>
+      <div class="bean-card-name">${escHTML(b.name)}</div>
+      <div class="bean-card-meta">
+        ${b.variety?`<span class="tag variety">🌿 ${escHTML(b.variety)}</span>`:''}
+        ${b.country?`<span class="tag">🌍 ${escHTML(b.country)}</span>`:''}
+        ${b.process?`<span class="tag process">${escHTML(b.process)}</span>`:''}
+        ${b.roastLevel?`<span class="tag roast-tag">${escHTML(b.roastLevel)}</span>`:''}
+      </div>
+      ${b.region?`<div class="entry-detail" style="margin-bottom:4px">地域: <span>${escHTML(b.region)}</span></div>`:''}
+      ${b.altitude?`<div class="entry-detail" style="margin-bottom:4px">標高: <span>${escHTML(b.altitude)} masl</span></div>`:''}
+      ${b.roaster?`<div class="entry-detail" style="margin-bottom:4px">ロースター: <span>${escHTML(b.roaster)}</span></div>`:''}
+      ${roastDays!==null?`<div class="entry-detail" style="margin-bottom:4px">焙煎: <span>${b.roastDate}（${roastDays}日前）</span></div>`:''}
+      ${b.note?`<div class="bean-card-note">${escHTML(b.note)}</div>`:''}
+      <div class="bean-card-stat">このジャーナルに記録: <span>${usedCount}杯</span></div>
+    </div>`;
+  }).join('');
+  grid.innerHTML = cards + `<button class="bean-add-btn" onclick="openBeanModal()">＋ 新しい豆を登録</button>`;
+}
+
+// ══════════════════════════════
+//  MODAL: BEAN
+// ══════════════════════════════
+document.getElementById('beanModal').addEventListener('click', e => { if(e.target.id==='beanModal') closeBeanModal(); });
+
+// ══════════════════════════════
+//  UTILS
+// ══════════════════════════════
+function formatDate(d){const days=['日','月','火','水','木','金','土'];return `${d.getFullYear()}年 ${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;}
+function formatTime(d){return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+function escHTML(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ══════════════════════════════
+//  INIT
+// ══════════════════════════════
+function init() {
+  const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('f-datetime').value = now.toISOString().slice(0,16);
+  buildFlavorUI('flavorCategories');
+  setupStars('stars', ()=>rating, v=>{ rating=v; });
+  setupImageDrop('f-img-area','f-img-preview');
+}
+
+init();
+startup();
+
+// ── 補助関数（フレーバー・画像・UI）──
+
+function buildFlavorUI(containerId, currentSel) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const selSet = currentSel instanceof Set ? currentSel : new Set(Array.isArray(currentSel) ? currentSel : []);
+  el.innerHTML = Object.entries(FLAVORS).map(([cat,items]) => `
+    <div class="flavor-cat-label">${cat}</div>
+    <div class="flavor-chips">${items.map(f=>`
+      <button type="button" class="flavor-chip${selSet.has(f)?' selected':''}" data-f="${escAttr(f)}" data-cid="${containerId}">${escHTML(f)}</button>
+    `).join('')}</div>
+  `).join('');
+  el.querySelectorAll('.flavor-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.f;
+      const cid = btn.dataset.cid;
+      const set = cid === 'flavorCategories' ? selectedFlavors : window._editFlavors;
+      if (!set) return;
+      set.has(f) ? set.delete(f) : set.add(f);
+      btn.classList.toggle('selected', set.has(f));
+    });
+  });
+}
+
+function setupStars(rowId, getVal, setVal) {
+  const stars = document.querySelectorAll(`#${rowId} .star`);
+  stars.forEach(s => {
+    s.addEventListener('click', () => { setVal(+s.dataset.v); refreshStars(rowId, +s.dataset.v); });
+    s.addEventListener('mouseover', () => refreshStars(rowId, +s.dataset.v));
+    s.addEventListener('mouseout', () => refreshStars(rowId, getVal()));
+  });
+}
+function refreshStars(rowId, val) {
+  document.querySelectorAll(`#${rowId} .star`).forEach(s => s.classList.toggle('active', +s.dataset.v <= val));
+}
+
+// ── IMAGE HANDLING ──
+function handleImageSelect(event, previewId) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        pendingImages.push({ dataUrl, name: file.name });
+        renderImagePreview(previewId, pendingImages, true);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function handleEditImageSelect(event, entryId) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        if (!window._editImages) window._editImages = [];
+        window._editImages.push({ dataUrl, name: file.name });
+        renderImagePreview('ei-preview-'+entryId, window._editImages, false, entryId);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderImagePreview(containerId, images, isPending, editId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = images.map((img, i) => `
+    <div class="img-thumb-wrap">
+      <img class="img-thumb" src="${img.dataUrl}" alt="" onclick="openLightbox(${JSON.stringify(images.map(x=>x.dataUrl))}, ${i})">
+      <button class="img-thumb-del" onclick="${isPending ? `removePendingImage(${i},'${containerId}')` : `removeEditImage(${i},'${escAttr(containerId)}','${escAttr(editId||'')}')`}" title="削除">×</button>
+    </div>
+  `).join('');
+}
+
+function removePendingImage(idx, previewId) {
+  pendingImages.splice(idx, 1);
+  renderImagePreview(previewId, pendingImages, true);
+}
+
+function removeEditImage(idx, previewId, entryId) {
+  if (!window._editImages) return;
+  window._editImages.splice(idx, 1);
+  renderImagePreview(previewId, window._editImages, false, entryId);
+}
+
+function setupImageDrop(areaId, previewId) {
+  const area = document.getElementById(areaId);
+  if (!area) return;
+  area.addEventListener('dragover', e => { e.preventDefault(); area.style.borderColor = 'var(--navy)'; });
+  area.addEventListener('dragleave', () => { area.style.borderColor = ''; });
+  area.addEventListener('drop', e => {
+    e.preventDefault(); area.style.borderColor = '';
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1200; let w = img.width, h = img.height;
+          if (w > MAX || h > MAX) { if (w > h) { h = Math.round(h*MAX/w); w=MAX; } else { w=Math.round(w*MAX/h); h=MAX; } }
+          const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          pendingImages.push({ dataUrl, name: file.name });
+          renderImagePreview(previewId, pendingImages, true);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+
+// ══════════════════════════════
+//  INIT
+// ══════════════════════════════
+function initApp() {
+  const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('f-datetime').value = now.toISOString().slice(0,16);
+  buildFlavorUI('flavorCategories');
+  setupStars('stars', () => rating, v => { rating = v; });
+  setupImageDrop('f-img-area', 'f-img-preview');
+  loadAll();
+}
+
+// Auth state listener - runs on load and on login/logout
+sb.auth.onAuthStateChange((event, session) => {
+  currentSession = session;
+  currentUserId = session?.user?.id || null;
+  if (session) {
+    // ログイン済み
+    document.getElementById('loginScreen').classList.add('hidden');
+    const user = session.user;
+    const name = user.user_metadata?.full_name || user.email || 'ユーザー';
+    const avatar = user.user_metadata?.avatar_url;
+    document.getElementById('userNameDisplay').textContent = name;
+    if (avatar) {
+      const img = document.getElementById('userAvatar');
+      img.src = avatar; img.style.display = 'block';
+    }
+    setStatus('ok','同期済み');
+    initApp();
+  } else {
+    // 未ログイン
+    document.getElementById('loginScreen').classList.remove('hidden');
+    setStatus('local','未ログイン');
+  }
+});
+
+async function signInWithGoogle() {
+  document.getElementById('loginLoading').style.display = 'block';
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) {
+    alert('ログインエラー: ' + error.message);
+    document.getElementById('loginLoading').style.display = 'none';
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  entries = []; beans = [];
+  document.getElementById('userAvatar').style.display = 'none';
+}
+
+// ══════════════════════════════
+//  IMAGE HANDLING
+// ══════════════════════════════
+function handleImageSelect(event, previewId) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    // Resize to max 1200px and compress to ~80% quality
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        pendingImages.push({ dataUrl, name: file.name });
+        renderImagePreview(previewId, pendingImages, true);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = ''; // allow re-selecting same file
+}
+
+function handleEditImageSelect(event, entryId) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        if (!window._editImages) window._editImages = [];
+        window._editImages.push({ dataUrl, name: file.name });
+        renderImagePreview('ei-preview-'+entryId, window._editImages, false, entryId);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderImagePreview(containerId, images, isPending, editId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = images.map((img, i) => `
+    <div class="img-thumb-wrap">
+      <img class="img-thumb" src="${img.dataUrl}" alt="${escAttr(img.name)}" onclick="openLightbox(${JSON.stringify(images.map(x=>x.dataUrl))}, ${i})">
+      <button class="img-thumb-del" onclick="${isPending ? `removePendingImage(${i},'${containerId}')` : `removeEditImage(${i},'${escAttr(containerId)}','${escAttr(editId||'')}')`}" title="削除">×</button>
+    </div>
+  `).join('');
+}
+
+function removePendingImage(idx, previewId) {
+  pendingImages.splice(idx, 1);
+  renderImagePreview(previewId, pendingImages, true);
+}
+
+function removeEditImage(idx, previewId, entryId) {
+  if (!window._editImages) return;
+  window._editImages.splice(idx, 1);
+  renderImagePreview(previewId, window._editImages, false, entryId);
+}
+
+// Drag & drop support
+function setupImageDrop(areaId, previewId) {
+  const area = document.getElementById(areaId);
+  if (!area) return;
+  area.addEventListener('dragover', e => { e.preventDefault(); area.style.borderColor = 'var(--brown-light)'; });
+  area.addEventListener('dragleave', () => { area.style.borderColor = ''; });
+  area.addEventListener('drop', e => {
+    e.preventDefault(); area.style.borderColor = '';
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1200; let w = img.width, h = img.height;
+          if (w > MAX || h > MAX) { if (w > h) { h = Math.round(h*MAX/w); w=MAX; } else { w=Math.round(w*MAX/h); h=MAX; } }
+          const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          pendingImages.push({ dataUrl, name: file.name });
+          renderImagePreview(previewId, pendingImages, true);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+
+// ══════════════════════════════
+//  SUPABASE API
+// ══════════════════════════════
+async function sbFetch(path, opts={}) {
+  const token = currentSession?.access_token || SB_KEY;
+  const res = await fetch(SB_URL+'/rest/v1/'+path, {
+    headers:{
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer||'',
+      ...opts.headers
+    },
+    method: opts.method||'GET',
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.status===204 ? null : res.json();
+}
+
+// ══════════════════════════════
+//  LOAD / SAVE
+// ══════════════════════════════
+async function loadAll() {
+  setStatus('syncing','同期中...');
+  try {
+    const [eData, bData] = await Promise.all([
+      sbFetch('coffee_entries?order=drunk_at.desc'),
+      sbFetch('coffee_beans?order=created_at.desc')
+    ]);
+    entries = eData.map(r => ({
+      id:String(r.id), name:r.name, temp:r.temp, place:r.place||'',
+      datetime:r.drunk_at, process:r.process||'', roastLevel:r.roast_level||'',
+      roastDate:r.roast_date||'', flavors:r.flavors||[], images:r.images||[],
+      note:r.note||'', rating:r.rating||0, variety:r.variety||'',
+      altitude:r.altitude||'', beanId:r.bean_id||''
+    }));
+    beans = bData.map(r => ({
+      id:String(r.id), name:r.name, variety:r.variety||'', country:r.country||'',
+      region:r.region||'', altitude:r.altitude||'', process:r.process||'',
+      roastLevel:r.roast_level||'', roastDate:r.roast_date||'',
+      roaster:r.roaster||'', note:r.note||''
+    }));
+    setStatus('ok','同期済み');
+  } catch(e) {
+    console.error(e);
+    setStatus('error','読み込みエラー');
+  }
+  renderJournal(); renderBeanSelect(); renderBeans();
+}
+
+// ══════════════════════════════
+//  ENTRY CRUD
+// ══════════════════════════════
+async function addEntry() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').focus(); return; }
+  const dt = document.getElementById('f-datetime').value;
+  const beanId = document.getElementById('f-bean-ref').value;
+  const entry = {
+    id: String(Date.now()), _isNew:true,
+    name, temp,
+    place: document.getElementById('f-place').value.trim(),
+    datetime: dt ? new Date(dt).toISOString() : new Date().toISOString(),
+    process: document.getElementById('f-process').value,
+    roastLevel: document.getElementById('f-roast-level').value,
+    roastDate: document.getElementById('f-roast-date').value,
+    variety: document.getElementById('f-variety').value,
+    altitude: document.getElementById('f-altitude').value,
+    flavors: [...selectedFlavors],
+    images: pendingImages.map(i => i.dataUrl),
+    note: document.getElementById('f-note').value.trim(),
+    rating, beanId
+  };
+  setStatus('syncing','保存中...');
+  try {
+    const row = {
+      user_id: currentUserId,
+      name:entry.name, temp:entry.temp, place:entry.place,
+      drunk_at:entry.datetime, process:entry.process,
+      roast_level:entry.roastLevel, roast_date:entry.roastDate||null,
+      variety:entry.variety, altitude:entry.altitude||null,
+      flavors:entry.flavors, images:entry.images,
+      note:entry.note, rating:entry.rating, bean_id:entry.beanId||null
+    };
+    const res = await sbFetch('coffee_entries',{method:'POST',body:row,headers:{'Prefer':'return=representation'}});
+    if (res&&res[0]) entry.id=String(res[0].id);
+    setStatus('ok','同期済み');
+  } catch(e) { setStatus('error','保存エラー'); }
+  delete entry._isNew;
+  entries.unshift(entry);
+  renderJournal(); resetForm();
+}
+
+async function deleteEntry(id) {
+  const ok = await showConfirm('このエントリーを削除しますか？');
+  if (!ok) return;
+  entries = entries.filter(e => e.id !== id);
+  try { await sbFetch(`coffee_entries?id=eq.${id}`,{method:'DELETE'}); setStatus('ok','同期済み'); }
+  catch(e){ setStatus('error','削除エラー'); }
+  renderJournal();
+}
+
+function startEdit(id) { editingId = id; renderJournal(); }
+function cancelEdit() { editingId = null; renderJournal(); }
+
+async function saveEdit(id) {
+  const idx = entries.findIndex(e => e.id===id);
+  if (idx<0) return;
+  const e = entries[idx];
+  e.name = document.getElementById('ee-name-'+id).value.trim()||e.name;
+  const hb = document.querySelector(`[data-etid="${id}"][data-tv="hot"]`);
+  e.temp = hb&&hb.classList.contains('active')?'hot':'iced';
+  e.place = document.getElementById('ee-place-'+id).value.trim();
+  const dv = document.getElementById('ee-dt-'+id).value;
+  if (dv) e.datetime = new Date(dv).toISOString();
+  e.process = document.getElementById('ee-process-'+id).value;
+  e.roastLevel = document.getElementById('ee-rl-'+id).value;
+  e.roastDate = document.getElementById('ee-rd-'+id).value;
+  e.variety = document.getElementById('ee-variety-'+id).value.trim();
+  e.note = document.getElementById('ee-note-'+id).value.trim();
+  e.flavors = [...(window._editFlavors||new Set())];
+  // images: keep existing unless _editImages was set
+  if (window._editImages !== undefined && window._editImages !== null) {
+    e.images = window._editImages.map(i => i.dataUrl || i);
+  }
+  let nr=0; document.querySelectorAll(`[data-esid="${id}"]`).forEach(s=>{if(s.classList.contains('active'))nr=+s.dataset.sv;});
+  if(nr) e.rating=nr;
+  setStatus('syncing','更新中...');
+  try {
+    const row={name:e.name,temp:e.temp,place:e.place,drunk_at:e.datetime,process:e.process,roast_level:e.roastLevel,roast_date:e.roastDate||null,variety:e.variety,flavors:e.flavors,images:e.images||[],note:e.note,rating:e.rating};
+    await sbFetch(`coffee_entries?id=eq.${id}`,{method:'PATCH',body:row});
+    setStatus('ok','同期済み');
+  } catch(err){setStatus('error','更新エラー');}
+  editingId=null; window._editFlavors=null; window._editImages=null; renderJournal();
+}
+
+// ══════════════════════════════
+//  BEAN CRUD
+// ══════════════════════════════
+function openBeanModal(id) {
+  editingBeanId = id||null;
+  document.getElementById('beanModalTitle').textContent = id ? '豆を編集' : '豆を登録';
+  if (id) {
+    const b = beans.find(b=>b.id===id);
+    if (b) {
+      document.getElementById('bm-name').value=b.name;
+      document.getElementById('bm-variety').value=b.variety||'';
+      document.getElementById('bm-country').value=b.country||'';
+      document.getElementById('bm-region').value=b.region||'';
+      document.getElementById('bm-altitude').value=b.altitude||'';
+      document.getElementById('bm-process').value=b.process||'';
+      document.getElementById('bm-roast').value=b.roastLevel||'';
+      document.getElementById('bm-roastdate').value=b.roastDate||'';
+      document.getElementById('bm-roaster').value=b.roaster||'';
+      document.getElementById('bm-note').value=b.note||'';
+    }
+  } else {
+    ['bm-name','bm-variety','bm-region','bm-altitude','bm-roaster','bm-note','bm-roastdate'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('bm-country').value='';
+    document.getElementById('bm-process').value='';
+    document.getElementById('bm-roast').value='';
+  }
+  document.getElementById('beanModal').classList.remove('hidden');
+}
+function closeBeanModal() { document.getElementById('beanModal').classList.add('hidden'); editingBeanId=null; }
+
+async function saveBean() {
+  const name = document.getElementById('bm-name').value.trim();
+  if (!name) { document.getElementById('bm-name').focus(); return; }
+  const bean = {
+    id: editingBeanId||String(Date.now()),
+    name, variety:document.getElementById('bm-variety').value.trim(),
+    country:document.getElementById('bm-country').value,
+    region:document.getElementById('bm-region').value.trim(),
+    altitude:document.getElementById('bm-altitude').value,
+    process:document.getElementById('bm-process').value,
+    roastLevel:document.getElementById('bm-roast').value,
+    roastDate:document.getElementById('bm-roastdate').value,
+    roaster:document.getElementById('bm-roaster').value.trim(),
+    note:document.getElementById('bm-note').value.trim(),
+  };
+  setStatus('syncing','保存中...');
+  try {
+    const row={user_id:currentUserId,name:bean.name,variety:bean.variety,country:bean.country,region:bean.region,altitude:bean.altitude||null,process:bean.process,roast_level:bean.roastLevel,roast_date:bean.roastDate||null,roaster:bean.roaster,note:bean.note};
+    if (editingBeanId) { await sbFetch(`coffee_beans?id=eq.${editingBeanId}`,{method:'PATCH',body:row}); }
+    else { const r=await sbFetch('coffee_beans',{method:'POST',body:row,headers:{'Prefer':'return=representation'}}); if(r&&r[0]) bean.id=String(r[0].id); }
+    setStatus('ok','同期済み');
+  } catch(e){setStatus('error','保存エラー');}
+  if (editingBeanId) { const i=beans.findIndex(b=>b.id===editingBeanId); if(i>=0) beans[i]=bean; }
+  else beans.unshift(bean);
+  closeBeanModal(); renderBeans(); renderBeanSelect();
+}
+
+async function deleteBean(id) {
+  const ok = await showConfirm('この豆を削除しますか？');
+  if (!ok) return;
+  beans = beans.filter(b=>b.id!==id);
+  try{ await sbFetch(`coffee_beans?id=eq.${id}`,{method:'DELETE'}); setStatus('ok','同期済み');}
+  catch(e){setStatus('error','削除エラー');}
+  renderBeans(); renderBeanSelect();
+}
+
+// ══════════════════════════════
+//  FORM HELPERS
+// ══════════════════════════════
+function setTemp(t) {
+  temp=t;
+  document.getElementById('btn-hot').classList.toggle('active',t==='hot');
+  document.getElementById('btn-iced').classList.toggle('active',t==='iced');
+}
+
+function setupStars(rowId, getVal, setVal) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  row.querySelectorAll('.star').forEach(s => {
+    s.addEventListener('click',()=>{setVal(+s.dataset.v); refreshStars(rowId,getVal());});
+    s.addEventListener('mouseover',()=>row.querySelectorAll('.star').forEach(x=>x.classList.toggle('active',+x.dataset.v<=+s.dataset.v)));
+    s.addEventListener('mouseout',()=>refreshStars(rowId,getVal()));
+  });
+}
+function refreshStars(rowId, val) {
+  document.getElementById(rowId)?.querySelectorAll('.star').forEach(x=>x.classList.toggle('active',+x.dataset.v<=val));
+}
+
+function autofillFromBean() {
+  const beanId = document.getElementById('f-bean-ref').value;
+  if (!beanId) return;
+  const b = beans.find(b=>b.id===beanId);
+  if (!b) return;
+  if (!document.getElementById('f-name').value) document.getElementById('f-name').value = b.name;
+  if (!document.getElementById('f-variety').value) document.getElementById('f-variety').value = b.variety||'';
+  if (!document.getElementById('f-process').value) document.getElementById('f-process').value = b.process||'';
+  if (!document.getElementById('f-roast-level').value) document.getElementById('f-roast-level').value = b.roastLevel||'';
+  if (!document.getElementById('f-roast-date').value) document.getElementById('f-roast-date').value = b.roastDate||'';
+  if (!document.getElementById('f-altitude').value) document.getElementById('f-altitude').value = b.altitude||'';
+}
+
+function resetForm() {
+  ['f-name','f-place','f-note','f-roast-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-process','f-roast-level','f-bean-ref','f-variety'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const alt=document.getElementById('f-altitude');if(alt)alt.value='';
+  pendingImages = [];
+  const prev = document.getElementById('f-img-preview'); if(prev) prev.innerHTML='';
+  rating=0; temp='hot'; selectedFlavors=new Set();
+  setTemp('hot'); refreshStars('stars',0);
+  buildFlavorUI('flavorCategories');
+  const n=new Date(); n.setMinutes(n.getMinutes()-n.getTimezoneOffset());
+  document.getElementById('f-datetime').value=n.toISOString().slice(0,16);
+}
+document.getElementById('f-name').addEventListener('keydown',e=>{if(e.key==='Enter')addEntry();});
+
+// ══════════════════════════════
+//  USER MANAGEMENT
+// ══════════════════════════════
+function openUserModal(){} // 使用しない（Google Auth）
+function closeUserModal(){}
+function updateUserDisplay(){}
+document.getElementById('beanModal').addEventListener('click',e=>{if(e.target.id==='beanModal')closeBeanModal();});
+
+// ══════════════════════════════
+//  STATUS
+// ══════════════════════════════
+function setStatus(state,text){
+  const dot=document.getElementById('statusDot');
+  dot.className='status-dot'+(state==='ok'?' ok':state==='syncing'?' syncing':'');
+  document.getElementById('statusText').textContent=text;
+}
+
+// ══════════════════════════════
+//  RENDER: JOURNAL
+// ══════════════════════════════
+function renderJournal() {
+  const list=document.getElementById('journal-list');
+  if(entries.length===0){
+    list.innerHTML=`<div class="empty"><div class="empty-icon">☕</div>まだ記録がありません。<br>最初の一杯を記録しましょう。</div>`;
+  } else {
+    const groups={};
+    entries.forEach(e=>{const d=(e.datetime||'').split('T')[0];(groups[d]=groups[d]||[]).push(e);});
+    list.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
+      const label=formatDate(new Date(date+'T12:00:00'));
+      return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${groups[date].map(renderEntryCard).join('')}</div>`;
+    }).join('');
+  }
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('stat-total').textContent=entries.length;
+  document.getElementById('stat-today').textContent=entries.filter(e=>(e.datetime||'').startsWith(today)).length;
+  document.getElementById('stat-hot').textContent=entries.filter(e=>e.temp==='hot').length;
+  document.getElementById('stat-iced').textContent=entries.filter(e=>e.temp==='iced').length;
+  document.getElementById('entry-count').textContent=entries.length+' 件';
+
+  // bind edit stars
+  document.querySelectorAll('[data-esid]').forEach(s=>{
+    s.addEventListener('click',()=>{
+      const sid=s.dataset.esid;
+      document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=+s.dataset.sv));
+    });
+    s.addEventListener('mouseover',()=>{
+      const sid=s.dataset.esid;
+      document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=+s.dataset.sv));
+    });
+    s.addEventListener('mouseout',()=>{
+      const sid=s.dataset.esid;
+      let cur=0; document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>{if(x.classList.contains('active'))cur=Math.max(cur,+x.dataset.sv);});
+      document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=cur));
+    });
+  });
+}
+
+function renderEntryCard(e) {
+  const icon=e.temp==='iced'?'🧊':'☕';
+  const timeStr=e.datetime?formatTime(new Date(e.datetime)):'';
+  const roastDays=e.roastDate?Math.floor((new Date()-new Date(e.roastDate+'T12:00:00'))/86400000):null;
+  const flavors=e.flavors||[];
+
+  if (editingId===e.id) {
+    window._editFlavors=new Set(flavors);
+    window._editImages = (e.images||[]).map(src => ({dataUrl:src, name:'photo'}));
+    const dtLocal=e.datetime?(()=>{const d=new Date(e.datetime);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);})():'';
+    const pOpts=['ウォッシュド','ナチュラル','ハニー / パルプドナチュラル','アナエロビック','ウェットハル','その他'];
+    const rOpts=['ライト','シナモン','ミディアム','ハイ','シティ','フルシティ','フレンチ','イタリアン'];
+    const editFlavHtml=Object.entries(FLAVORS).map(([cat,items])=>`
+      <div class="flavor-cat-label">${cat}</div>
+      <div class="flavor-chips">${items.map(f=>`<button type="button" class="flavor-chip${flavors.includes(f)?' selected':''}" data-f="${escAttr(f)}" data-cid="ef-${e.id}">${escHTML(f)}</button>`).join('')}</div>
+    `).join('');
+    setTimeout(()=>{
+      const cont=document.getElementById('ef-'+e.id);
+      if(!cont)return;
+      cont.querySelectorAll('.flavor-chip').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const f=btn.dataset.f;
+          window._editFlavors.has(f)?window._editFlavors.delete(f):window._editFlavors.add(f);
+          btn.classList.toggle('selected',window._editFlavors.has(f));
+        });
+      });
+      // render existing image previews
+      if (window._editImages && window._editImages.length) {
+        renderImagePreview('ei-preview-'+e.id, window._editImages, false, e.id);
+      }
+    },0);
+    return `
+    <div class="entry" id="entry-${e.id}">
+      <div class="bullet">${icon}</div>
+      <div class="entry-body" style="padding-right:0">
+        <div class="edit-form">
+          <div class="form-row">
+            <div class="form-group"><label>コーヒー名</label><input type="text" id="ee-name-${e.id}" value="${escAttr(e.name)}"></div>
+            <div class="form-group"><label>温度</label>
+              <div class="toggle-row">
+                <button type="button" class="toggle-btn ${e.temp==='hot'?'active':''}" data-etid="${e.id}" data-tv="hot" onclick="this.classList.add('active');this.nextElementSibling.classList.remove('active')">☕ ホット</button>
+                <button type="button" class="toggle-btn ${e.temp==='iced'?'active':''}" data-etid="${e.id}" data-tv="iced" onclick="this.classList.add('active');this.previousElementSibling.classList.remove('active')">🧊 アイス</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>飲んだ日時</label><input type="datetime-local" id="ee-dt-${e.id}" value="${dtLocal}"></div>
+            <div class="form-group"><label>場所</label><input type="text" id="ee-place-${e.id}" value="${escAttr(e.place||'')}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>品種</label><input type="text" id="ee-variety-${e.id}" value="${escAttr(e.variety||'')}"></div>
+            <div class="form-group"><label>プロセス</label>
+              <select id="ee-process-${e.id}"><option value="">—</option>${pOpts.map(p=>`<option ${e.process===p?'selected':''}>${p}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>焙煎度</label>
+              <select id="ee-rl-${e.id}"><option value="">—</option>${rOpts.map(r=>`<option ${e.roastLevel===r?'selected':''}>${r}</option>`).join('')}</select>
+            </div>
+            <div class="form-group"><label>焙煎日</label><input type="date" id="ee-rd-${e.id}" value="${e.roastDate||''}"></div>
+          </div>
+          <div style="margin-bottom:12px"><label style="display:block;margin-bottom:8px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);">フレーバーノート</label><div id="ef-${e.id}">${editFlavHtml}</div></div>
+          <div class="form-group" style="margin-bottom:11px"><label>評価</label>
+            <div class="stars-row">${[1,2,3,4,5].map(v=>`<span class="star ${e.rating>=v?'active':''}" data-esid="${e.id}" data-sv="${v}">★</span>`).join('')}</div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px"><label>メモ</label><textarea id="ee-note-${e.id}">${escHTML(e.note||'')}</textarea></div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label>写真</label>
+            <div class="img-upload-area" style="margin-top:5px;">
+              <input type="file" accept="image/*" multiple onchange="handleEditImageSelect(event,'${e.id}')">
+              <div class="img-upload-label">📷 クリックして追加 <span>（既存の写真はそのまま残ります）</span></div>
+            </div>
+            <div class="img-preview-row" id="ei-preview-${e.id}"></div>
+          </div>
+          <div class="form-actions">
+            <button class="add-btn" onclick="saveEdit('${e.id}')">保存</button>
+            <button class="cancel-btn" onclick="cancelEdit()">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return `
+  <div class="entry" id="entry-${e.id}">
+    <div class="bullet">${icon}</div>
+    <div class="entry-body">
+      <div class="entry-top">
+        <span class="entry-name">${escHTML(e.name)}</span>
+        <span class="entry-time">${timeStr}</span>
+      </div>
+      <div class="entry-meta">
+        <span class="tag temp-tag">${e.temp==='iced'?'アイス':'ホット'}</span>
+        ${e.variety?`<span class="tag variety">🌿 ${escHTML(e.variety)}</span>`:''}
+        ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
+        ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
+        ${e.roastLevel?`<span class="tag roast-tag">${escHTML(e.roastLevel)}</span>`:''}
+        ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+      </div>
+      ${flavors.length?`<div class="entry-meta">${flavors.map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('')}</div>`:''}
+      ${roastDays!==null?`<div class="entry-detail">焙煎: <span>${e.roastDate}（${roastDays}日前）</span></div>`:''}
+      ${e.altitude?`<div class="entry-detail">標高: <span>${e.altitude} masl</span></div>`:''}
+      ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
+      ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" alt="photo ${i+1}" onclick="openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
+    </div>
+    <div class="entry-actions">
+      <button class="icon-btn" onclick="startEdit('${e.id}')" title="編集">✎</button>
+      <button class="icon-btn del" onclick="deleteEntry('${e.id}')" title="削除">✕</button>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════
+//  RENDER: ARCHIVE
+// ══════════════════════════════
+function changeMonth(delta) {
+  archiveMonth.m += delta;
+  if (archiveMonth.m > 11) { archiveMonth.m=0; archiveMonth.y++; }
+  if (archiveMonth.m < 0) { archiveMonth.m=11; archiveMonth.y--; }
+  renderArchive();
+}
+
+function renderArchive() {
+  const {y,m} = archiveMonth;
+  document.getElementById('monthDisplay').textContent = `${y}年 ${m+1}月`;
+  const prefix = `${y}-${String(m+1).padStart(2,'0')}`;
+  const mEntries = entries.filter(e=>(e.datetime||'').startsWith(prefix));
+
+  // summary
+  document.getElementById('ms-total').textContent = mEntries.length;
+  document.getElementById('ms-hot').textContent = mEntries.filter(e=>e.temp==='hot').length;
+  document.getElementById('ms-iced').textContent = mEntries.filter(e=>e.temp==='iced').length;
+  const rated = mEntries.filter(e=>e.rating>0);
+  document.getElementById('ms-avg').textContent = rated.length ? (rated.reduce((s,e)=>s+e.rating,0)/rated.length).toFixed(1) : '—';
+
+  // flavor bar
+  const flavorCount = {};
+  mEntries.forEach(e=>(e.flavors||[]).forEach(f=>{ flavorCount[f]=(flavorCount[f]||0)+1; }));
+  const topFlavors = Object.entries(flavorCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const flavorBar = document.getElementById('monthFlavorBar');
+  if (topFlavors.length>0) {
+    flavorBar.style.display='block';
+    const max = topFlavors[0][1];
+    document.getElementById('monthFlavorBars').innerHTML = topFlavors.map(([f,c])=>`
+      <div class="flavor-bar-row">
+        <span class="flavor-bar-label">${escHTML(f)}</span>
+        <div class="flavor-bar-track"><div class="flavor-bar-fill" style="width:${Math.round(c/max*100)}%"></div></div>
+        <span class="flavor-bar-count">${c}</span>
+      </div>`).join('');
+  } else { flavorBar.style.display='none'; }
+
+  // entry list grouped by day
+  const archList = document.getElementById('archive-list');
+  if (mEntries.length===0) {
+    archList.innerHTML=`<div class="empty"><div class="empty-icon">📅</div>この月の記録はありません</div>`;
+    return;
+  }
+  const groups={};
+  mEntries.forEach(e=>{const d=(e.datetime||'').split('T')[0];(groups[d]=groups[d]||[]).push(e);});
+  archList.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
+    const label=formatDate(new Date(date+'T12:00:00'));
+    const items=groups[date].map(e=>`
+      <div class="month-entry-row entry" onclick="goToEntry('${e.id}')">
+        <div class="bullet">${e.temp==='iced'?'🧊':'☕'}</div>
+        <div class="entry-body" style="padding-right:48px">
+          <div class="entry-top">
+            <span class="entry-name">${escHTML(e.name)}</span>
+            <span class="entry-time">${e.datetime?formatTime(new Date(e.datetime)):''}</span>
+          </div>
+          <div class="entry-meta">
+            ${e.variety?`<span class="tag variety">🌿 ${escHTML(e.variety)}</span>`:''}
+            ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
+            ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
+            ${e.roastLevel?`<span class="tag roast-tag">${escHTML(e.roastLevel)}</span>`:''}
+            ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+          </div>
+          ${(e.flavors||[]).length?`<div class="entry-meta">${e.flavors.slice(0,4).map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('')}${e.flavors.length>4?`<span class="tag flavor">+${e.flavors.length-4}</span>`:''}</div>`:''}
+          ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
+        </div>
+        <div class="entry-actions">
+          <button class="icon-btn del" onclick="event.stopPropagation();deleteEntry('${e.id}').then(()=>renderArchive())" title="削除">✕</button>
+        </div>
+      </div>`).join('');
+    return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${items}</div>`;
+  }).join('');
+}
+
+function goToEntry(id) {
+  showPage('journal');
+  setTimeout(()=>{ const el=document.getElementById('entry-'+id); if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(160,105,74,.08)';setTimeout(()=>{el.style.background='';},1200);} },100);
+}
+
+// ══════════════════════════════
+//  RENDER: BEANS
+// ══════════════════════════════
+function renderBeanSelect() {
+  const sel = document.getElementById('f-bean-ref');
+  const cur = sel.value;
+  sel.innerHTML='<option value="">— 豆データベースから選択 —</option>'+beans.map(b=>`<option value="${b.id}" ${b.id===cur?'selected':''}>${escHTML(b.name)}${b.variety?' ('+escHTML(b.variety)+')':''}</option>`).join('');
+}
+
+function renderBeans() {
+  const grid = document.getElementById('beanGrid');
+  document.getElementById('bean-count').textContent = beans.length+' 種';
+  const cards = beans.map(b => {
+    const usedCount = entries.filter(e=>e.beanId===b.id).length;
+    const roastDays = b.roastDate?Math.floor((new Date()-new Date(b.roastDate+'T12:00:00'))/86400000):null;
+    return `
+    <div class="bean-card">
+      <div class="bean-card-actions">
+        <button class="icon-btn" onclick="openBeanModal('${b.id}')" title="編集">✎</button>
+        <button class="icon-btn del" onclick="deleteBean('${b.id}')" title="削除">✕</button>
+      </div>
+      <div class="bean-card-name">${escHTML(b.name)}</div>
+      <div class="bean-card-meta">
+        ${b.variety?`<span class="tag variety">🌿 ${escHTML(b.variety)}</span>`:''}
+        ${b.country?`<span class="tag">🌍 ${escHTML(b.country)}</span>`:''}
+        ${b.process?`<span class="tag process">${escHTML(b.process)}</span>`:''}
+        ${b.roastLevel?`<span class="tag roast-tag">${escHTML(b.roastLevel)}</span>`:''}
+      </div>
+      ${b.region?`<div class="entry-detail" style="margin-bottom:4px">地域: <span>${escHTML(b.region)}</span></div>`:''}
+      ${b.altitude?`<div class="entry-detail" style="margin-bottom:4px">標高: <span>${escHTML(b.altitude)} masl</span></div>`:''}
+      ${b.roaster?`<div class="entry-detail" style="margin-bottom:4px">ロースター: <span>${escHTML(b.roaster)}</span></div>`:''}
+      ${roastDays!==null?`<div class="entry-detail" style="margin-bottom:4px">焙煎: <span>${b.roastDate}（${roastDays}日前）</span></div>`:''}
+      ${b.note?`<div class="bean-card-note">${escHTML(b.note)}</div>`:''}
+      <div class="bean-card-stat">このジャーナルに記録: <span>${usedCount}杯</span></div>
+    </div>`;
+  }).join('');
+  grid.innerHTML = cards + `<button class="bean-add-btn" onclick="openBeanModal()">＋ 新しい豆を登録</button>`;
+}
+
+// ══════════════════════════════
+//  UTILS
+// ══════════════════════════════
+function formatDate(d){const days=['日','月','火','水','木','金','土'];return `${d.getFullYear()}年 ${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;}
+function formatTime(d){return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+function escHTML(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+</body>
+</html>
