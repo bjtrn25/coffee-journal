@@ -784,10 +784,14 @@ let editingBeanId = null;
 // ══════════════════════════════
 //  SUPABASE INIT & AUTH
 // ══════════════════════════════
+// Supabase接続情報（コードに埋め込み済み）
+const SUPABASE_URL = 'https://cgamzijaczofkodtxvhd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnYW16aWphY3pvZmtvZHR4dmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzExMzMsImV4cCI6MjA4NzQ0NzEzM30.ZIpnk0juSwt1W7Lydytr5opPuFpJ80mjYHjLu03Wm9U';
+
 function getConfig() {
   return {
-    url: localStorage.getItem('cj-sb-url') || '',
-    key: localStorage.getItem('cj-sb-key') || ''
+    url: SUPABASE_URL,
+    key: SUPABASE_ANON_KEY
   };
 }
 
@@ -851,7 +855,7 @@ function showApp(user) {
 async function startup() {
   showLoadingScreen(true);
   const { url, key } = getConfig();
-  if (!url || !key) { showSetupScreen(); return; }
+  // URLとKeyは埋め込み済みのためsetup画面は表示しない
 
   // Supabase クライアント初期化
   sb = window.supabase.createClient(url, key);
