@@ -380,14 +380,23 @@ textarea{resize:none;height:60px;line-height:1.6;}
       </div>
       <button class="share-btn close-btn" onclick="closeShareModal()" style="margin-top:-4px;">&#x2715;</button>
     </div>
-    <div class="share-canvas-wrap" id="shareCanvasWrap">
-      <canvas id="shareCanvas"></canvas>
+    <div style="position:relative;">
+      <div class="share-canvas-wrap" id="shareCanvasWrap" onclick="expandShareCard()" style="cursor:zoom-in;" title="タップで拡大">
+        <canvas id="shareCanvas"></canvas>
+      </div>
+      <div style="position:absolute;bottom:8px;right:10px;background:rgba(5,45,87,.55);color:rgba(255,255,255,.75);font-size:11px;padding:3px 9px;border-radius:20px;pointer-events:none;backdrop-filter:blur(2px);">&#x1F50D; タップで拡大</div>
     </div>
     <div class="share-actions">
       <button class="share-btn primary" onclick="downloadShareCard()">&#x2B07; 画像を保存</button>
       <button class="share-btn secondary" id="shareNativeBtn" onclick="nativeShare()" style="display:none;">&#x1F4E4; 共有する</button>
     </div>
   </div>
+</div>
+
+<!-- SHARE CARD EXPAND (full-screen view) -->
+<div id="shareExpandOverlay" style="display:none;position:fixed;inset:0;background:rgba(5,45,87,.92);z-index:4000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="closeExpandCard()">
+  <img id="shareExpandImg" src="" alt="" style="max-width:96vw;max-height:92vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 48px rgba(0,0,0,.5);">
+  <button onclick="closeExpandCard()" style="position:fixed;top:16px;right:20px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:42px;height:42px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
 </div>
 
 <!-- BEAN MODAL -->
@@ -1158,6 +1167,22 @@ function closeShareModal() {
   _shareEntry = null;
 }
 
+// 焙煎度別カラーテーマ定義
+const ROAST_THEMES = {
+  'ライト':      { bg: ['#1a3a1a','#2a5a2a','#1e4a1e'], accent: '#a8e890', circle: '#a8e890' },
+  'シナモン':    { bg: ['#2a3a10','#3a5a18','#2e4a14'], accent: '#c8e860', circle: '#c8e860' },
+  'ミディアム':  { bg: ['#3a2a0a','#5a3e10','#4a3210'], accent: '#e8a840', circle: '#e8a840' },
+  'ハイ':        { bg: ['#3e2408','#5e3610','#4e2c0c'], accent: '#e89040', circle: '#e89040' },
+  'シティ':      { bg: ['#3a1e08','#5a2e0e','#4a2408'], accent: '#d07030', circle: '#d07030' },
+  'フルシティ':  { bg: ['#2e1606','#48220a','#3a1c08'], accent: '#c06020', circle: '#c06020' },
+  'フレンチ':    { bg: ['#1e1008','#301808','#281408'], accent: '#a05020', circle: '#a05020' },
+  'イタリアン':  { bg: ['#140c06','#201006','#180e06'], accent: '#804018', circle: '#804018' },
+};
+
+function getRoastTheme(roastLevel) {
+  return ROAST_THEMES[roastLevel] || { bg: ['#052D57','#0a3d6e','#0d4a85'], accent: '#FFBD00', circle: '#FFBD00' };
+}
+
 function drawShareCard(e) {
   const canvas = document.getElementById('shareCanvas');
   const W = 800, H = 460;
@@ -1165,11 +1190,14 @@ function drawShareCard(e) {
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
+  // --- 焙煎度別テーマ取得 ---
+  const theme = getRoastTheme(e.roastLevel);
+
   // --- 背景グラデーション ---
   const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#052D57');
-  grad.addColorStop(0.6, '#0a3d6e');
-  grad.addColorStop(1, '#0d4a85');
+  grad.addColorStop(0, theme.bg[0]);
+  grad.addColorStop(0.6, theme.bg[1]);
+  grad.addColorStop(1, theme.bg[2]);
   ctx.fillStyle = grad;
   ctx.beginPath();
   roundRect(ctx, 0, 0, W, H, 0);
@@ -1177,8 +1205,8 @@ function drawShareCard(e) {
 
   // --- 装飾: 右上の大きな円 ---
   ctx.save();
-  ctx.globalAlpha = 0.06;
-  ctx.fillStyle = '#FFBD00';
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = theme.circle;
   ctx.beginPath();
   ctx.arc(W - 80, -60, 200, 0, Math.PI * 2);
   ctx.fill();
@@ -1186,8 +1214,8 @@ function drawShareCard(e) {
 
   // --- 装飾: 左下の小さな円 ---
   ctx.save();
-  ctx.globalAlpha = 0.04;
-  ctx.fillStyle = '#FFBD00';
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = theme.circle;
   ctx.beginPath();
   ctx.arc(60, H + 40, 140, 0, Math.PI * 2);
   ctx.fill();
@@ -1195,11 +1223,11 @@ function drawShareCard(e) {
 
   // --- ロゴマーク ---
   ctx.save();
-  ctx.fillStyle = '#FFBD00';
+  ctx.fillStyle = theme.accent;
   ctx.beginPath();
   ctx.arc(52, 52, 22, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#052D57';
+  ctx.fillStyle = theme.bg[0];
   ctx.font = 'bold 18px serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1213,14 +1241,28 @@ function drawShareCard(e) {
   ctx.textBaseline = 'middle';
   ctx.fillText('Coffee Journal', 82, 52);
 
+  // --- 焙煎度バッジ（焙煎度があれば表示） ---
+  if (e.roastLevel) {
+    const rw = ctx.measureText(e.roastLevel).width + 24;
+    ctx.fillStyle = `${theme.accent}33`;
+    ctx.beginPath();
+    roundRect(ctx, W - 48 - rw, 32, rw, 22, 11);
+    ctx.fill();
+    ctx.fillStyle = theme.accent;
+    ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(e.roastLevel, W - 48 - rw / 2, 43);
+  }
+
   // --- 温度バッジ ---
   const isIced = e.temp === 'iced';
   const badgeText = isIced ? '🧊 ICED' : '☕ HOT';
-  ctx.fillStyle = isIced ? 'rgba(100,180,255,0.18)' : 'rgba(255,189,0,0.18)';
+  ctx.fillStyle = isIced ? 'rgba(100,180,255,0.18)' : `${theme.accent}2e`;
   ctx.beginPath();
   roundRect(ctx, 48, 90, 80, 26, 13);
   ctx.fill();
-  ctx.fillStyle = isIced ? '#64b4ff' : '#FFBD00';
+  ctx.fillStyle = isIced ? '#64b4ff' : theme.accent;
   ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1263,11 +1305,10 @@ function drawShareCard(e) {
   ctx.stroke();
   metaY += 22;
 
-  // --- タグ群（品種・プロセス・焙煎度） ---
+  // --- タグ群（品種・プロセス・標高—焙煎度は右上に移動したので除外） ---
   const tags = [];
   if (e.variety) tags.push({ text: e.variety, color: 'rgba(180,140,255,0.25)', textColor: '#c8a8ff' });
   if (e.process) tags.push({ text: e.process, color: 'rgba(100,180,255,0.2)', textColor: '#82c8ff' });
-  if (e.roastLevel) tags.push({ text: e.roastLevel, color: 'rgba(255,189,0,0.2)', textColor: '#FFBD00' });
   if (e.altitude) tags.push({ text: e.altitude + ' masl', color: 'rgba(100,220,150,0.18)', textColor: '#80e0a0' });
 
   let tagX = 48;
@@ -1338,7 +1379,7 @@ function drawShareCard(e) {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     for (let i = 1; i <= 5; i++) {
-      ctx.fillStyle = i <= e.rating ? '#FFBD00' : 'rgba(255,255,255,0.2)';
+      ctx.fillStyle = i <= e.rating ? theme.accent : 'rgba(255,255,255,0.2)';
       ctx.fillText('★', 48 + (i - 1) * 24, starY);
     }
   }
@@ -1363,7 +1404,7 @@ function drawShareCard(e) {
       // 画像の上に薄いオーバーレイ
       ctx.save();
       ctx.globalAlpha = 0.2;
-      ctx.fillStyle = '#052D57';
+      ctx.fillStyle = theme.bg[0];
       ctx.beginPath();
       roundRect(ctx, imgX, imgY, imgSize, imgSize, 12);
       ctx.fill();
@@ -1409,6 +1450,25 @@ function wrapText(ctx, text, maxWidth) {
   }
   if (line) lines.push(line);
   return lines;
+}
+
+function expandShareCard() {
+  const canvas = document.getElementById('shareCanvas');
+  const overlay = document.getElementById('shareExpandOverlay');
+  const img = document.getElementById('shareExpandImg');
+  img.src = canvas.toDataURL('image/png');
+  overlay.style.display = 'flex';
+  // Escキーで閉じる
+  document._shareExpandKeyHandler = (e) => { if (e.key === 'Escape') closeExpandCard(); };
+  document.addEventListener('keydown', document._shareExpandKeyHandler);
+}
+
+function closeExpandCard() {
+  document.getElementById('shareExpandOverlay').style.display = 'none';
+  if (document._shareExpandKeyHandler) {
+    document.removeEventListener('keydown', document._shareExpandKeyHandler);
+    document._shareExpandKeyHandler = null;
+  }
 }
 
 function downloadShareCard() {
