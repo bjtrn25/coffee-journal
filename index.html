@@ -29,13 +29,13 @@
   --shadow:0 1px 3px rgba(5,45,87,.08),0 4px 16px rgba(5,45,87,.06);
   --shadow-md:0 4px 20px rgba(5,45,87,.12);
   /* 焙煎度カラー */
-  --roast-light:#F7E7C6;
-  --roast-cinnamon:#EBC27A;
-  --roast-medium:#D79B4E;
-  --roast-high:#B8722E;
+  --roast-light:#D9F7A2;
+  --roast-cinnamon:#F6DE8B;
+  --roast-medium:#E8C36A;
+  --roast-high:#A95522;
   --roast-city:#8B4A2A;
   --roast-fullcity:#5B2D1A;
-  --text-dark:#2B211B;
+  --text-dark:#17301A;
   --text-light:#F6F1EA;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -199,10 +199,29 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .empty-icon{font-size:36px;margin-bottom:10px;opacity:.35;}
 
 /* ── MONTHLY ARCHIVE ── */
-.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-.month-display{font-size:20px;font-weight:700;color:var(--navy);}
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;position:relative;}
+.month-display{font-size:20px;font-weight:700;color:var(--navy);cursor:pointer;padding:6px 14px;border-radius:var(--radius);transition:background .15s;user-select:none;display:flex;align-items:center;gap:8px;}
+.month-display:hover{background:var(--navy-05);}
+.month-display-caret{font-size:12px;color:var(--text-muted);transition:transform .2s;}
+.month-display.open .month-display-caret{transform:rotate(180deg);}
 .month-btn{background:var(--surface);border:1.5px solid var(--border);color:var(--text-muted);font-size:18px;width:36px;height:36px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);}
 .month-btn:hover{border-color:var(--navy);color:var(--navy);}
+/* カレンダーピッカー */
+.month-picker{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);z-index:200;min-width:300px;padding:16px;display:none;}
+.month-picker.open{display:block;}
+.month-picker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.month-picker-year{font-size:16px;font-weight:700;color:var(--navy);}
+.month-picker-nav{background:none;border:1.5px solid var(--border);color:var(--text-muted);font-size:16px;width:30px;height:30px;cursor:pointer;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.month-picker-nav:hover{border-color:var(--navy);color:var(--navy);}
+.month-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.month-picker-cell{padding:8px 4px;text-align:center;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--text-muted);border:1.5px solid transparent;transition:all .15s;position:relative;}
+.month-picker-cell:hover{background:var(--navy-05);border-color:var(--border);color:var(--navy);}
+.month-picker-cell.has-entries{color:var(--navy);font-weight:700;}
+.month-picker-cell.has-entries::after{content:attr(data-count);position:absolute;top:2px;right:4px;font-size:9px;font-weight:600;color:var(--yellow);background:var(--navy);border-radius:20px;padding:0 4px;line-height:16px;min-width:16px;}
+.month-picker-cell.selected{background:var(--navy);color:var(--white);border-color:var(--navy);}
+.month-picker-cell.selected::after{background:var(--yellow);color:var(--navy);}
+.month-picker-cell.current-month{border-color:var(--yellow);}
+.month-picker-cell.future{opacity:.35;pointer-events:none;}
 .month-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
 .month-stat{background:var(--surface);border-radius:var(--radius);text-align:center;padding:14px 8px;box-shadow:var(--shadow);}
 .month-stat-num{font-size:22px;font-weight:700;color:var(--navy);display:block;line-height:1;}
@@ -629,10 +648,22 @@ textarea{resize:none;height:60px;line-height:1.6;}
 <!-- PAGE: ARCHIVE -->
 <div class="page" id="page-archive">
 <div class="layout">
-  <div class="month-nav">
+  <div class="month-nav" id="monthNav">
     <button class="month-btn" onclick="changeMonth(-1)">‹</button>
-    <span class="month-display" id="monthDisplay"></span>
+    <div class="month-display" id="monthDisplay" onclick="toggleMonthPicker()">
+      <span id="monthDisplayText"></span>
+      <span class="month-display-caret">▼</span>
+    </div>
     <button class="month-btn" onclick="changeMonth(1)">›</button>
+    <!-- カレンダーピッカー -->
+    <div class="month-picker" id="monthPicker">
+      <div class="month-picker-header">
+        <button class="month-picker-nav" onclick="pickerChangeYear(-1)">‹</button>
+        <span class="month-picker-year" id="pickerYear"></span>
+        <button class="month-picker-nav" onclick="pickerChangeYear(1)">›</button>
+      </div>
+      <div class="month-picker-grid" id="pickerGrid"></div>
+    </div>
   </div>
   <div class="month-summary">
     <div class="month-stat"><span class="month-stat-num" id="ms-total">0</span><span class="month-stat-label">合計</span></div>
@@ -1188,19 +1219,19 @@ function closeShareModal() {
 // accent = ユーザー指定カラーそのまま
 // bg = そのカラーを暗くしたグラデーション背景
 const ROAST_THEMES = {
-  // ライト: #F7E7C6 → 温かみのあるクリーム・ベージ背景
-  'ライト':     { bg: ['#4a3e28','#6a5a38','#5a4c30'], accent: '#F7E7C6', circle: '#F7E7C6' },
-  // シナモン: #EBC27A → 温かみのあるアンバー背景
-  'シナモン':   { bg: ['#3e2c0e','#5c4018','#4c3412'], accent: '#EBC27A', circle: '#EBC27A' },
-  // ミディアム: #D79B4E → ウォームブラウン背景
-  'ミディアム': { bg: ['#38240a','#543612','#44300e'], accent: '#D79B4E', circle: '#D79B4E' },
-  // ハイ: #B8722E → 深いテラコッタ背景
-  'ハイ':       { bg: ['#321c08','#4e2c0e','#40240a'], accent: '#B8722E', circle: '#B8722E' },
+  // ライト: #D9F7A2 → 清澄な黄緑アクセント、深い緑背景
+  'ライト':     { bg: ['#1a3020','#2a4a2c','#223828'], accent: '#D9F7A2', circle: '#D9F7A2' },
+  // シナモン: #F6DE8B → 温かい黄色アクセント、深いアンバー背景
+  'シナモン':   { bg: ['#3a2c08','#564018','#463412'], accent: '#F6DE8B', circle: '#F6DE8B' },
+  // ミディアム: #E8C36A → ゴールデンアンバー、深いウォームブラウン背景
+  'ミディアム': { bg: ['#38240a','#543612','#44300e'], accent: '#E8C36A', circle: '#E8C36A' },
+  // ハイ: #A95522 → 深いオレンジブラウン、深いテラコッタ背景
+  'ハイ':       { bg: ['#321c08','#4e2c0e','#40240a'], accent: '#C87040', circle: '#C87040' },
   // シティ: #8B4A2A → 深い赤褐色背景
-  'シティ':     { bg: ['#2a1608','#40200c','#341a08'], accent: '#C87848', circle: '#C87848' },
+  'シティ':     { bg: ['#2a1608','#40200c','#341a08'], accent: '#B86840', circle: '#B86840' },
   // フルシティ: #5B2D1A → 深いダークブラウン背景
   'フルシティ': { bg: ['#1c0c06','#2e1608','#241006'], accent: '#A06040', circle: '#A06040' },
-  // フレンチ: 指定なし→フルシティより暗いチョコレート背景
+  // フレンチ: 指定なし→深いチョコレート背景
   'フレンチ':   { bg: ['#140a04','#220e06','#1a0c04'], accent: '#885030', circle: '#885030' },
   // イタリアン: 指定なし→最深のエスプレッソ背景
   'イタリアン': { bg: ['#0e0804','#1a0c04','#140a04'], accent: '#704020', circle: '#704020' },
@@ -1681,9 +1712,75 @@ function changeMonth(delta) {
   renderArchive();
 }
 
+// カレンダーピッカー用年変数
+let pickerYear = new Date().getFullYear();
+
+function toggleMonthPicker() {
+  const picker = document.getElementById('monthPicker');
+  const display = document.getElementById('monthDisplay');
+  const isOpen = picker.classList.contains('open');
+  if (isOpen) {
+    picker.classList.remove('open');
+    display.classList.remove('open');
+  } else {
+    pickerYear = archiveMonth.y;
+    renderPickerGrid();
+    picker.classList.add('open');
+    display.classList.add('open');
+  }
+}
+
+function closeMonthPicker() {
+  document.getElementById('monthPicker').classList.remove('open');
+  document.getElementById('monthDisplay').classList.remove('open');
+}
+
+function pickerChangeYear(delta) {
+  const now = new Date();
+  const newYear = pickerYear + delta;
+  if (newYear < 2020 || newYear > now.getFullYear()) return;
+  pickerYear = newYear;
+  renderPickerGrid();
+}
+
+function renderPickerGrid() {
+  const now = new Date();
+  document.getElementById('pickerYear').textContent = pickerYear + '年';
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const grid = document.getElementById('pickerGrid');
+  grid.innerHTML = months.map((label, i) => {
+    const isFuture = pickerYear > now.getFullYear() || (pickerYear === now.getFullYear() && i > now.getMonth());
+    const isSelected = pickerYear === archiveMonth.y && i === archiveMonth.m;
+    const isCurrentMonth = pickerYear === now.getFullYear() && i === now.getMonth();
+    const prefix = `${pickerYear}-${String(i+1).padStart(2,'0')}`;
+    const count = entries.filter(e => (e.datetime||'').startsWith(prefix)).length;
+    const hasEntries = count > 0;
+    let cls = 'month-picker-cell';
+    if (isFuture) cls += ' future';
+    if (isSelected) cls += ' selected';
+    if (isCurrentMonth && !isSelected) cls += ' current-month';
+    if (hasEntries && !isSelected) cls += ' has-entries';
+    const dataCount = hasEntries ? ` data-count="${count}"` : '';
+    return `<div class="${cls}"${dataCount} onclick="selectPickerMonth(${pickerYear},${i})">${label}</div>`;
+  }).join('');
+}
+
+function selectPickerMonth(y, m) {
+  archiveMonth.y = y;
+  archiveMonth.m = m;
+  closeMonthPicker();
+  renderArchive();
+}
+
+// ピッカー外クリックで閉じる
+document.addEventListener('click', (e) => {
+  const nav = document.getElementById('monthNav');
+  if (nav && !nav.contains(e.target)) closeMonthPicker();
+});
+
 function renderArchive() {
   const {y,m} = archiveMonth;
-  document.getElementById('monthDisplay').textContent = `${y}年 ${m+1}月`;
+  document.getElementById('monthDisplayText').textContent = `${y}年 ${m+1}月`;
   const prefix = `${y}-${String(m+1).padStart(2,'0')}`;
   const mEntries = entries.filter(e=>(e.datetime||'').startsWith(prefix));
   document.getElementById('ms-total').textContent = mEntries.length;
