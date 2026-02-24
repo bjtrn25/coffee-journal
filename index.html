@@ -28,6 +28,15 @@
   --radius-sm:6px;
   --shadow:0 1px 3px rgba(5,45,87,.08),0 4px 16px rgba(5,45,87,.06);
   --shadow-md:0 4px 20px rgba(5,45,87,.12);
+  /* 焙煎度カラー */
+  --roast-light:#F7E7C6;
+  --roast-cinnamon:#EBC27A;
+  --roast-medium:#D79B4E;
+  --roast-high:#B8722E;
+  --roast-city:#8B4A2A;
+  --roast-fullcity:#5B2D1A;
+  --text-dark:#2B211B;
+  --text-light:#F6F1EA;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;font-size:14px;line-height:1.6;}
@@ -166,7 +175,15 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .tag{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
 .tag.temp-tag{color:var(--navy);background:var(--navy-10);}
 .tag.process{color:#1a5a8a;background:rgba(26,90,138,.1);}
-.tag.roast-tag{color:#7a5200;background:rgba(255,189,0,.18);}
+.tag.roast-tag{color:var(--text-dark);background:var(--roast-medium);}
+.tag.roast-tag[data-roast="ライト"]{background:var(--roast-light);color:var(--text-dark);}
+.tag.roast-tag[data-roast="シナモン"]{background:var(--roast-cinnamon);color:var(--text-dark);}
+.tag.roast-tag[data-roast="ミディアム"]{background:var(--roast-medium);color:var(--text-dark);}
+.tag.roast-tag[data-roast="ハイ"]{background:var(--roast-high);color:var(--text-light);}
+.tag.roast-tag[data-roast="シティ"]{background:var(--roast-city);color:var(--text-light);}
+.tag.roast-tag[data-roast="フルシティ"]{background:var(--roast-fullcity);color:var(--text-light);}
+.tag.roast-tag[data-roast="フレンチ"]{background:#3a1a0a;color:var(--text-light);}
+.tag.roast-tag[data-roast="イタリアン"]{background:#1e0e06;color:var(--text-light);}
 .tag.flavor{color:var(--green);background:rgba(26,122,74,.1);}
 .tag.variety{color:#5a3a8a;background:rgba(90,58,138,.1);}
 .entry-rating{color:var(--yellow);font-size:13px;letter-spacing:-.5px;}
@@ -1167,16 +1184,26 @@ function closeShareModal() {
   _shareEntry = null;
 }
 
-// 焙煎度別カラーテーマ定義
+// 焙煎度別カラーテーマ（ユーザー指定カラーをアクセントに使用）
+// accent = ユーザー指定カラーそのまま
+// bg = そのカラーを暗くしたグラデーション背景
 const ROAST_THEMES = {
-  'ライト':      { bg: ['#1a3a1a','#2a5a2a','#1e4a1e'], accent: '#a8e890', circle: '#a8e890' },
-  'シナモン':    { bg: ['#2a3a10','#3a5a18','#2e4a14'], accent: '#c8e860', circle: '#c8e860' },
-  'ミディアム':  { bg: ['#3a2a0a','#5a3e10','#4a3210'], accent: '#e8a840', circle: '#e8a840' },
-  'ハイ':        { bg: ['#3e2408','#5e3610','#4e2c0c'], accent: '#e89040', circle: '#e89040' },
-  'シティ':      { bg: ['#3a1e08','#5a2e0e','#4a2408'], accent: '#d07030', circle: '#d07030' },
-  'フルシティ':  { bg: ['#2e1606','#48220a','#3a1c08'], accent: '#c06020', circle: '#c06020' },
-  'フレンチ':    { bg: ['#1e1008','#301808','#281408'], accent: '#a05020', circle: '#a05020' },
-  'イタリアン':  { bg: ['#140c06','#201006','#180e06'], accent: '#804018', circle: '#804018' },
+  // ライト: #F7E7C6 → 温かみのあるクリーム・ベージ背景
+  'ライト':     { bg: ['#4a3e28','#6a5a38','#5a4c30'], accent: '#F7E7C6', circle: '#F7E7C6' },
+  // シナモン: #EBC27A → 温かみのあるアンバー背景
+  'シナモン':   { bg: ['#3e2c0e','#5c4018','#4c3412'], accent: '#EBC27A', circle: '#EBC27A' },
+  // ミディアム: #D79B4E → ウォームブラウン背景
+  'ミディアム': { bg: ['#38240a','#543612','#44300e'], accent: '#D79B4E', circle: '#D79B4E' },
+  // ハイ: #B8722E → 深いテラコッタ背景
+  'ハイ':       { bg: ['#321c08','#4e2c0e','#40240a'], accent: '#B8722E', circle: '#B8722E' },
+  // シティ: #8B4A2A → 深い赤褐色背景
+  'シティ':     { bg: ['#2a1608','#40200c','#341a08'], accent: '#C87848', circle: '#C87848' },
+  // フルシティ: #5B2D1A → 深いダークブラウン背景
+  'フルシティ': { bg: ['#1c0c06','#2e1608','#241006'], accent: '#A06040', circle: '#A06040' },
+  // フレンチ: 指定なし→フルシティより暗いチョコレート背景
+  'フレンチ':   { bg: ['#140a04','#220e06','#1a0c04'], accent: '#885030', circle: '#885030' },
+  // イタリアン: 指定なし→最深のエスプレッソ背景
+  'イタリアン': { bg: ['#0e0804','#1a0c04','#140a04'], accent: '#704020', circle: '#704020' },
 };
 
 function getRoastTheme(roastLevel) {
@@ -1627,7 +1654,7 @@ function renderEntryCard(e) {
         ${e.variety?`<span class="tag variety">🌿 ${escHTML(e.variety)}</span>`:''}
         ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
         ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
-        ${e.roastLevel?`<span class="tag roast-tag">${escHTML(e.roastLevel)}</span>`:''}
+        ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(e.roastLevel)}">${escHTML(e.roastLevel)}</span>`:''}
         ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
       </div>
       ${flavors.length?`<div class="entry-meta">${flavors.map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('')}</div>`:''}
@@ -1696,7 +1723,7 @@ function renderArchive() {
             ${e.variety?`<span class="tag variety">🌿 ${escHTML(e.variety)}</span>`:''}
             ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
             ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
-            ${e.roastLevel?`<span class="tag roast-tag">${escHTML(e.roastLevel)}</span>`:''}
+            ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(e.roastLevel)}">${escHTML(e.roastLevel)}</span>`:''}
             ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
           </div>
           ${(e.flavors||[]).length?`<div class="entry-meta">${e.flavors.slice(0,4).map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('')}${e.flavors.length>4?`<span class="tag flavor">+${e.flavors.length-4}</span>`:''}</div>`:''}
@@ -1741,7 +1768,7 @@ function renderBeans() {
         ${b.variety?`<span class="tag variety">🌿 ${escHTML(b.variety)}</span>`:''}
         ${b.country?`<span class="tag">🌍 ${escHTML(b.country)}</span>`:''}
         ${b.process?`<span class="tag process">${escHTML(b.process)}</span>`:''}
-        ${b.roastLevel?`<span class="tag roast-tag">${escHTML(b.roastLevel)}</span>`:''}
+        ${b.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(b.roastLevel)}">${escHTML(b.roastLevel)}</span>`:''}
       </div>
       ${b.region?`<div class="entry-detail" style="margin-bottom:4px">地域: <span>${escHTML(b.region)}</span></div>`:''}
       ${b.altitude?`<div class="entry-detail" style="margin-bottom:4px">標高: <span>${escHTML(b.altitude)} masl</span></div>`:''}
