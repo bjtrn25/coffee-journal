@@ -158,7 +158,7 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .entry:hover{box-shadow:var(--shadow-md);}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .bullet{flex-shrink:0;width:32px;height:32px;background:var(--navy-10);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px;}
-.entry-body{flex:1;min-width:0;padding-right:56px;}
+.entry-body{flex:1;min-width:0;padding-right:78px;}
 .entry-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:5px;}
 .entry-name{font-size:15px;font-weight:700;color:var(--navy);}
 .entry-time{font-size:11px;color:var(--text-muted);flex-shrink:0;background:var(--bg);padding:2px 8px;border-radius:20px;}
@@ -288,6 +288,24 @@ textarea{resize:none;height:60px;line-height:1.6;}
   .header-top{padding:12px 16px;}
   .layout{padding:20px 14px 70px;}
 }
+
+/* -- SHARE CARD MODAL -- */
+.share-modal-overlay{position:fixed;inset:0;background:rgba(5,45,87,.7);z-index:3000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadeIn .2s;}
+.share-modal-overlay.hidden{display:none;}
+.share-modal{background:var(--surface);border-radius:16px;padding:28px 28px 24px;width:min(480px,94vw);box-shadow:0 20px 60px rgba(5,45,87,.3);animation:slideUp .2s;}
+.share-modal-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.share-modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;}
+.share-canvas-wrap{border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(5,45,87,.15);margin-bottom:18px;line-height:0;}
+.share-canvas-wrap canvas{width:100%;height:auto;display:block;}
+.share-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.share-btn{flex:1;min-width:120px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;}
+.share-btn.primary{background:var(--navy);color:var(--yellow);}
+.share-btn.primary:hover{background:#0a3d6e;}
+.share-btn.secondary{background:var(--bg);color:var(--navy);border:1.5px solid var(--border);}
+.share-btn.secondary:hover{border-color:var(--navy);background:var(--navy-05);}
+.share-btn.close-btn{background:transparent;color:var(--text-muted);border:1.5px solid var(--border);flex:0 0 auto;min-width:auto;padding:10px 14px;}
+.share-btn.close-btn:hover{color:var(--navy);border-color:var(--navy);}
+.icon-btn.share:hover{color:#1a7a4a;background:rgba(26,122,74,.07);}
 </style>
 </head>
 <body>
@@ -350,6 +368,26 @@ textarea{resize:none;height:60px;line-height:1.6;}
   <img id="lightboxImg" src="" alt="">
   <button class="lightbox-nav next" onclick="event.stopPropagation();lightboxStep(1)">›</button>
   <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<!-- SHARE CARD MODAL -->
+<div class="share-modal-overlay hidden" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+      <div>
+        <div class="share-modal-title">&#x2615; テイスティングノートを共有</div>
+        <div class="share-modal-sub">カード画像を保存・共有できます</div>
+      </div>
+      <button class="share-btn close-btn" onclick="closeShareModal()" style="margin-top:-4px;">&#x2715;</button>
+    </div>
+    <div class="share-canvas-wrap" id="shareCanvasWrap">
+      <canvas id="shareCanvas"></canvas>
+    </div>
+    <div class="share-actions">
+      <button class="share-btn primary" onclick="downloadShareCard()">&#x2B07; 画像を保存</button>
+      <button class="share-btn secondary" id="shareNativeBtn" onclick="nativeShare()" style="display:none;">&#x1F4E4; 共有する</button>
+    </div>
+  </div>
 </div>
 
 <!-- BEAN MODAL -->
@@ -1098,6 +1136,311 @@ function updateLightbox() {
 function lightboxKey(e) { if(e.key==='Escape')closeLightbox(); if(e.key==='ArrowLeft')lightboxStep(-1); if(e.key==='ArrowRight')lightboxStep(1); }
 
 // ══════════════════════════════
+//  SHARE CARD
+// ══════════════════════════════
+let _shareEntry = null;
+
+function openShareModal(entryId) {
+  const e = entries.find(x => x.id === entryId);
+  if (!e) return;
+  _shareEntry = e;
+  document.getElementById('shareModal').classList.remove('hidden');
+  // Web Share API対応チェック
+  if (navigator.share && navigator.canShare) {
+    document.getElementById('shareNativeBtn').style.display = 'flex';
+  }
+  // 少し遅延してからCanvas描画（モーダルが表示されてから）
+  setTimeout(() => drawShareCard(e), 50);
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.add('hidden');
+  _shareEntry = null;
+}
+
+function drawShareCard(e) {
+  const canvas = document.getElementById('shareCanvas');
+  const W = 800, H = 460;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // --- 背景グラデーション ---
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#052D57');
+  grad.addColorStop(0.6, '#0a3d6e');
+  grad.addColorStop(1, '#0d4a85');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  roundRect(ctx, 0, 0, W, H, 0);
+  ctx.fill();
+
+  // --- 装飾: 右上の大きな円 ---
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = '#FFBD00';
+  ctx.beginPath();
+  ctx.arc(W - 80, -60, 200, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // --- 装飾: 左下の小さな円 ---
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  ctx.fillStyle = '#FFBD00';
+  ctx.beginPath();
+  ctx.arc(60, H + 40, 140, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // --- ロゴマーク ---
+  ctx.save();
+  ctx.fillStyle = '#FFBD00';
+  ctx.beginPath();
+  ctx.arc(52, 52, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#052D57';
+  ctx.font = 'bold 18px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('☕', 52, 53);
+  ctx.restore();
+
+  // --- アプリ名 ---
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '500 12px "Noto Sans JP", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Coffee Journal', 82, 52);
+
+  // --- 温度バッジ ---
+  const isIced = e.temp === 'iced';
+  const badgeText = isIced ? '🧊 ICED' : '☕ HOT';
+  ctx.fillStyle = isIced ? 'rgba(100,180,255,0.18)' : 'rgba(255,189,0,0.18)';
+  ctx.beginPath();
+  roundRect(ctx, 48, 90, 80, 26, 13);
+  ctx.fill();
+  ctx.fillStyle = isIced ? '#64b4ff' : '#FFBD00';
+  ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(badgeText, 88, 103);
+
+  // --- コーヒー名（大きく） ---
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  const nameText = e.name || '';
+  const nameFontSize = nameText.length > 20 ? 28 : nameText.length > 14 ? 32 : 38;
+  ctx.font = `bold ${nameFontSize}px "Noto Sans JP", sans-serif`;
+  ctx.fillText(truncateText(ctx, nameText, W - 96), 48, 134);
+
+  // --- 場所 ---
+  let metaY = 134 + nameFontSize + 10;
+  if (e.place) {
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '400 14px "Noto Sans JP", sans-serif';
+    ctx.fillText('📍 ' + e.place, 48, metaY);
+    metaY += 24;
+  }
+
+  // --- 日時 ---
+  if (e.datetime) {
+    const d = new Date(e.datetime);
+    const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}  ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '300 12px "Noto Sans JP", sans-serif';
+    ctx.fillText(dateStr, 48, metaY);
+    metaY += 22;
+  }
+
+  // --- 区切り線 ---
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(48, metaY + 6);
+  ctx.lineTo(W - 48, metaY + 6);
+  ctx.stroke();
+  metaY += 22;
+
+  // --- タグ群（品種・プロセス・焙煎度） ---
+  const tags = [];
+  if (e.variety) tags.push({ text: e.variety, color: 'rgba(180,140,255,0.25)', textColor: '#c8a8ff' });
+  if (e.process) tags.push({ text: e.process, color: 'rgba(100,180,255,0.2)', textColor: '#82c8ff' });
+  if (e.roastLevel) tags.push({ text: e.roastLevel, color: 'rgba(255,189,0,0.2)', textColor: '#FFBD00' });
+  if (e.altitude) tags.push({ text: e.altitude + ' masl', color: 'rgba(100,220,150,0.18)', textColor: '#80e0a0' });
+
+  let tagX = 48;
+  ctx.font = '500 11px "Noto Sans JP", sans-serif';
+  tags.forEach(tag => {
+    const tw = ctx.measureText(tag.text).width;
+    const pw = tw + 20;
+    if (tagX + pw > W - 48) return;
+    ctx.fillStyle = tag.color;
+    ctx.beginPath();
+    roundRect(ctx, tagX, metaY, pw, 22, 11);
+    ctx.fill();
+    ctx.fillStyle = tag.textColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tag.text, tagX + pw / 2, metaY + 11);
+    tagX += pw + 8;
+  });
+  metaY += 34;
+
+  // --- フレーバーノート ---
+  const flavors = (e.flavors || []).slice(0, 8);
+  if (flavors.length > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '700 10px "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('FLAVOR NOTES', 48, metaY);
+    metaY += 18;
+
+    let fx = 48;
+    ctx.font = '400 12px "Noto Sans JP", sans-serif';
+    flavors.forEach(f => {
+      const fw = ctx.measureText(f).width;
+      const fp = fw + 18;
+      if (fx + fp > W - 48) return;
+      ctx.fillStyle = 'rgba(26,122,74,0.3)';
+      ctx.beginPath();
+      roundRect(ctx, fx, metaY, fp, 22, 11);
+      ctx.fill();
+      ctx.fillStyle = '#80e0b0';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(f, fx + fp / 2, metaY + 11);
+      fx += fp + 6;
+    });
+    metaY += 34;
+  }
+
+  // --- メモ ---
+  if (e.note) {
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = 'italic 13px "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const maxNoteW = W - 96;
+    const noteLines = wrapText(ctx, '"' + e.note + '"', maxNoteW);
+    noteLines.slice(0, 2).forEach((line, i) => {
+      ctx.fillText(line, 48, metaY + i * 20);
+    });
+    metaY += Math.min(noteLines.length, 2) * 20 + 8;
+  }
+
+  // --- 評価（星） ---
+  if (e.rating) {
+    const starY = H - 52;
+    ctx.font = '18px serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    for (let i = 1; i <= 5; i++) {
+      ctx.fillStyle = i <= e.rating ? '#FFBD00' : 'rgba(255,255,255,0.2)';
+      ctx.fillText('★', 48 + (i - 1) * 24, starY);
+    }
+  }
+
+  // --- 右側: コーヒー画像（あれば） ---
+  if (e.images && e.images.length > 0) {
+    const img = new Image();
+    img.onload = () => {
+      const imgSize = 160;
+      const imgX = W - 48 - imgSize;
+      const imgY = H - 48 - imgSize;
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, imgX, imgY, imgSize, imgSize, 12);
+      ctx.clip();
+      // アスペクト比を維持してカバー
+      const scale = Math.max(imgSize / img.width, imgSize / img.height);
+      const sw = imgSize / scale, sh = imgSize / scale;
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, imgX, imgY, imgSize, imgSize);
+      ctx.restore();
+      // 画像の上に薄いオーバーレイ
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = '#052D57';
+      ctx.beginPath();
+      roundRect(ctx, imgX, imgY, imgSize, imgSize, 12);
+      ctx.fill();
+      ctx.restore();
+    };
+    img.src = e.images[0];
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function truncateText(ctx, text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let t = text;
+  while (t.length > 0 && ctx.measureText(t + '...').width > maxWidth) t = t.slice(0, -1);
+  return t + '...';
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split('');
+  const lines = [];
+  let line = '';
+  for (const ch of words) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line.length > 0) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function downloadShareCard() {
+  const canvas = document.getElementById('shareCanvas');
+  const name = (_shareEntry?.name || 'coffee').replace(/[^a-zA-Z0-9\u3000-\u9fff]/g, '_').slice(0, 30);
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = `coffee_journal_${name}.png`;
+  a.click();
+}
+
+async function nativeShare() {
+  const canvas = document.getElementById('shareCanvas');
+  const name = (_shareEntry?.name || 'coffee').replace(/[^a-zA-Z0-9\u3000-\u9fff]/g, '_').slice(0, 30);
+  try {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    const file = new File([blob], `coffee_journal_${name}.png`, { type: 'image/png' });
+    if (navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: `${_shareEntry?.name || 'Coffee'} - Coffee Journal`,
+        text: (_shareEntry?.flavors || []).join(' / '),
+        files: [file]
+      });
+    } else {
+      downloadShareCard();
+    }
+  } catch(err) {
+    if (err.name !== 'AbortError') downloadShareCard();
+  }
+}
+
+// ══════════════════════════════
 //  STATUS
 // ══════════════════════════════
 function setStatus(state, text) {
@@ -1234,8 +1577,9 @@ function renderEntryCard(e) {
       ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
     </div>
     <div class="entry-actions">
-      <button class="icon-btn" onclick="startEdit('${e.id}')" title="編集">✎</button>
-      <button class="icon-btn del" onclick="deleteEntry('${e.id}')" title="削除">✕</button>
+      <button class="icon-btn share" onclick="openShareModal('${e.id}')" title="\u5171\u6709">&#x1F4E4;</button>
+      <button class="icon-btn" onclick="startEdit('${e.id}')" title="\u7de8\u96c6">✎</button>
+      <button class="icon-btn del" onclick="deleteEntry('${e.id}')" title="\u524a\u9664">✕</button>
     </div>
   </div>`;
 }
