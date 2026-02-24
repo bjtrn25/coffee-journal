@@ -102,12 +102,16 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
 
 /* ── STATS ── */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
-.stat-item{background:var(--surface);border-radius:var(--radius);padding:16px 12px;text-align:center;box-shadow:var(--shadow);}
+.stat-item{background:var(--surface);border-radius:var(--radius);padding:16px 12px;text-align:center;box-shadow:var(--shadow);cursor:pointer;transition:all .18s;border:2px solid transparent;}
+.stat-item:hover{box-shadow:var(--shadow-md);border-color:var(--border-strong);}
 .stat-num{font-size:28px;font-weight:700;color:var(--navy);display:block;line-height:1;}
 .stat-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:4px;}
 .stat-item.accent{background:var(--navy);}
 .stat-item.accent .stat-num{color:var(--yellow);}
 .stat-item.accent .stat-label{color:rgba(255,255,255,.5);}
+.stat-item.filter-active{background:var(--navy);border-color:var(--navy);}
+.stat-item.filter-active .stat-num{color:var(--yellow);}
+.stat-item.filter-active .stat-label{color:rgba(255,255,255,.6);}
 
 /* ── FORM / CARD ── */
 .card{background:var(--surface);border-radius:var(--radius);padding:22px 26px;margin-bottom:24px;box-shadow:var(--shadow);}
@@ -246,6 +250,32 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .bean-card-actions{position:absolute;top:14px;right:14px;display:flex;gap:2px;}
 .bean-card-stat{font-size:11px;color:var(--text-muted);margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-weight:400;}
 .bean-card-stat span{color:var(--navy);font-weight:600;}
+/* 豆詳細モーダル */
+.bean-detail-overlay{position:fixed;inset:0;background:rgba(5,45,87,.55);z-index:600;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.bean-detail-overlay.hidden{display:none;}
+.bean-detail-modal{background:var(--surface);border-radius:var(--radius);padding:28px 28px 24px;max-width:540px;width:calc(100% - 32px);max-height:88vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-md);}
+.bean-detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;}
+.bean-detail-name{font-size:20px;font-weight:700;color:var(--navy);line-height:1.3;}
+.bean-detail-section{margin-bottom:14px;}
+.bean-detail-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+.bean-detail-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.bean-detail-info{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;}
+.bean-detail-info-item{}
+.bean-detail-info-key{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);display:block;}
+.bean-detail-info-val{font-size:14px;font-weight:500;color:var(--navy);}
+.bean-detail-note{font-size:13px;color:var(--text-muted);line-height:1.6;background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;}
+.bean-detail-stat{font-size:12px;color:var(--text-muted);padding-top:12px;border-top:1px solid var(--border);margin-top:4px;}
+.bean-detail-stat span{color:var(--navy);font-weight:700;}
+.bean-detail-images{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.bean-detail-img{width:80px;height:80px;object-fit:cover;border-radius:var(--radius-sm);cursor:pointer;border:1.5px solid var(--border);transition:border-color .15s;}
+.bean-detail-img:hover{border-color:var(--navy);}
+.bean-detail-actions{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.bean-detail-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:8px 18px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500;transition:all .15s;border:1.5px solid var(--border);background:var(--surface);color:var(--text);}
+.bean-detail-btn:hover{border-color:var(--navy);color:var(--navy);}
+.bean-detail-btn.primary{background:var(--navy);color:var(--white);border-color:var(--navy);}
+.bean-detail-btn.primary:hover{background:#0a3d6e;}
+.bean-detail-btn.danger{color:var(--danger);border-color:rgba(217,48,37,.3);}
+.bean-detail-btn.danger:hover{background:rgba(217,48,37,.06);border-color:var(--danger);}
 .bean-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--border);padding:22px;cursor:pointer;color:var(--text-muted);font-family:'Noto Sans JP',sans-serif;font-size:13px;background:transparent;width:100%;transition:all .2s;border-radius:var(--radius);font-weight:400;}
 .bean-add-btn:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-05);}
 
@@ -512,6 +542,34 @@ textarea{resize:none;height:60px;line-height:1.6;}
   </div>
 </div>
 
+<!-- BEAN DETAIL MODAL -->
+<div class="bean-detail-overlay hidden" id="beanDetailModal" onclick="if(event.target===this)closeBeanDetail()">
+  <div class="bean-detail-modal">
+    <div class="bean-detail-header">
+      <div>
+        <div class="bean-detail-name" id="bd-name"></div>
+        <div class="bean-detail-row" id="bd-tags" style="margin-top:8px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeBeanDetail()" style="position:static;flex-shrink:0;">×</button>
+    </div>
+    <div class="bean-detail-info" id="bd-info"></div>
+    <div id="bd-note-wrap" style="display:none;margin-bottom:14px;">
+      <div class="bean-detail-label">メモ</div>
+      <div class="bean-detail-note" id="bd-note"></div>
+    </div>
+    <div id="bd-images-wrap" style="display:none;">
+      <div class="bean-detail-label">画像</div>
+      <div class="bean-detail-images" id="bd-images"></div>
+    </div>
+    <div class="bean-detail-stat" id="bd-stat"></div>
+    <div class="bean-detail-actions">
+      <button class="bean-detail-btn primary" id="bd-edit-btn" onclick="">✎ 編集</button>
+      <button class="bean-detail-btn danger" id="bd-del-btn" onclick="">✕ 削除</button>
+      <button class="bean-detail-btn" onclick="closeBeanDetail()">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <!-- APP -->
 <header class="header">
   <div class="header-top">
@@ -544,10 +602,10 @@ textarea{resize:none;height:60px;line-height:1.6;}
   <!-- Supabase 接続済み（Google Auth使用） -->
 
   <div class="stats">
-    <div class="stat-item"><span class="stat-num" id="stat-total">0</span><span class="stat-label">合計</span></div>
-    <div class="stat-item accent"><span class="stat-num" id="stat-today">0</span><span class="stat-label">今日</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-hot">0</span><span class="stat-label">ホット</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-iced">0</span><span class="stat-label">アイス</span></div>
+    <div class="stat-item" id="filter-all" onclick="setJournalFilter('all')"><span class="stat-num" id="stat-total">0</span><span class="stat-label">合計</span></div>
+    <div class="stat-item accent" id="filter-today" onclick="setJournalFilter('today')"><span class="stat-num" id="stat-today">0</span><span class="stat-label">今日</span></div>
+    <div class="stat-item" id="filter-hot" onclick="setJournalFilter('hot')"><span class="stat-num" id="stat-hot">0</span><span class="stat-label">ホット</span></div>
+    <div class="stat-item" id="filter-iced" onclick="setJournalFilter('iced')"><span class="stat-num" id="stat-iced">0</span><span class="stat-label">アイス</span></div>
   </div>
 
   <div class="card">
@@ -1570,24 +1628,48 @@ function setStatus(state, text) {
 // ══════════════════════════════
 //  RENDER: JOURNAL
 // ══════════════════════════════
+// ジャーナルフィルター状態
+let journalFilter = 'all'; // 'all' | 'today' | 'hot' | 'iced'
+
+function setJournalFilter(f) {
+  journalFilter = (journalFilter === f && f !== 'all') ? 'all' : f;
+  renderJournal();
+}
+
 function renderJournal() {
+  const today = new Date().toISOString().split('T')[0];
+  // フィルター適用
+  let filtered = entries;
+  if (journalFilter === 'today') filtered = entries.filter(e=>(e.datetime||'').startsWith(today));
+  else if (journalFilter === 'hot') filtered = entries.filter(e=>e.temp==='hot');
+  else if (journalFilter === 'iced') filtered = entries.filter(e=>e.temp==='iced');
+  // フィルターボタンのハイライト更新
+  ['all','today','hot','iced'].forEach(key => {
+    const el = document.getElementById('filter-'+key);
+    if (!el) return;
+    el.classList.toggle('filter-active', journalFilter === key);
+    // 「今日」は元々accentクラスを持つが、フィルター時は上書き
+    if (key === 'today') el.classList.toggle('accent', journalFilter !== 'today');
+  });
   const list = document.getElementById('journal-list');
-  if (entries.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">☕</div>まだ記録がありません。<br>最初の一杯を記録しましょう。</div>`;
+  if (filtered.length === 0) {
+    const emptyMsg = journalFilter !== 'all'
+      ? `<div class="empty"><div class="empty-icon">${journalFilter==='hot'?'☕':journalFilter==='iced'?'🧣':'📅'}</div>該当する記録がありません</div>`
+      : `<div class="empty"><div class="empty-icon">☕</div>まだ記録がありません。<br>最初の一杯を記録しましょう。</div>`;
+    list.innerHTML = emptyMsg;
   } else {
     const groups = {};
-    entries.forEach(e => { const d=(e.datetime||'').split('T')[0]; (groups[d]=groups[d]||[]).push(e); });
+    filtered.forEach(e => { const d=(e.datetime||'').split('T')[0]; (groups[d]=groups[d]||[]).push(e); });
     list.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date => {
       const label = formatDate(new Date(date+'T12:00:00'));
       return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${groups[date].map(renderEntryCard).join('')}</div>`;
     }).join('');
   }
-  const today = new Date().toISOString().split('T')[0];
   document.getElementById('stat-total').textContent = entries.length;
   document.getElementById('stat-today').textContent = entries.filter(e=>(e.datetime||'').startsWith(today)).length;
   document.getElementById('stat-hot').textContent = entries.filter(e=>e.temp==='hot').length;
   document.getElementById('stat-iced').textContent = entries.filter(e=>e.temp==='iced').length;
-  document.getElementById('entry-count').textContent = entries.length+' 件';
+  document.getElementById('entry-count').textContent = (journalFilter==='all'?entries.length:filtered.length)+' 件';
   // bind edit stars
   document.querySelectorAll('[data-esid]').forEach(s => {
     s.addEventListener('click', () => { const sid=s.dataset.esid; document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=+s.dataset.sv)); });
@@ -1855,10 +1937,10 @@ function renderBeans() {
     const usedCount = entries.filter(e=>e.beanId===b.id).length;
     const roastDays = b.roastDate?Math.floor((new Date()-new Date(b.roastDate+'T12:00:00'))/86400000):null;
     return `
-    <div class="bean-card">
+    <div class="bean-card" onclick="openBeanDetail('${b.id}')" style="cursor:pointer;">
       <div class="bean-card-actions">
-        <button class="icon-btn" onclick="openBeanModal('${b.id}')" title="編集">✎</button>
-        <button class="icon-btn del" onclick="deleteBean('${b.id}')" title="削除">✕</button>
+        <button class="icon-btn" onclick="event.stopPropagation();openBeanModal('${b.id}')" title="編集">✎</button>
+        <button class="icon-btn del" onclick="event.stopPropagation();deleteBean('${b.id}')" title="削除">✕</button>
       </div>
       <div class="bean-card-name">${escHTML(b.name)}</div>
       <div class="bean-card-meta">
@@ -1876,6 +1958,62 @@ function renderBeans() {
     </div>`;
   }).join('');
   grid.innerHTML = cards + `<button class="bean-add-btn" onclick="openBeanModal()">＋ 新しい豆を登録</button>`;
+}
+
+// ══════════════════════════════
+//  BEAN DETAIL MODAL
+// ══════════════════════════════
+function openBeanDetail(id) {
+  const b = beans.find(x => x.id === id);
+  if (!b) return;
+  const usedCount = entries.filter(e => e.beanId === b.id).length;
+  const roastDays = b.roastDate ? Math.floor((new Date()-new Date(b.roastDate+'T12:00:00'))/86400000) : null;
+  // 名前
+  document.getElementById('bd-name').textContent = b.name;
+  // タグ
+  const tagsEl = document.getElementById('bd-tags');
+  tagsEl.innerHTML = [
+    b.variety ? `<span class="tag variety">🌿 ${escHTML(b.variety)}</span>` : '',
+    b.country ? `<span class="tag">🌍 ${escHTML(b.country)}</span>` : '',
+    b.process ? `<span class="tag process">${escHTML(b.process)}</span>` : '',
+    b.roastLevel ? `<span class="tag roast-tag" data-roast="${escHTML(b.roastLevel)}">${escHTML(b.roastLevel)}</span>` : '',
+  ].join('');
+  // 詳細情報グリッド
+  const infoItems = [
+    { key: '地域 / 農園', val: b.region },
+    { key: '標高', val: b.altitude ? b.altitude+' masl' : null },
+    { key: 'ロースター', val: b.roaster },
+    { key: '焙煎日', val: roastDays !== null ? `${b.roastDate}（${roastDays}日前）` : b.roastDate || null },
+  ].filter(x => x.val);
+  document.getElementById('bd-info').innerHTML = infoItems.map(x =>
+    `<div class="bean-detail-info-item"><span class="bean-detail-info-key">${x.key}</span><span class="bean-detail-info-val">${escHTML(x.val)}</span></div>`
+  ).join('');
+  // メモ
+  const noteWrap = document.getElementById('bd-note-wrap');
+  if (b.note) {
+    noteWrap.style.display = 'block';
+    document.getElementById('bd-note').textContent = b.note;
+  } else { noteWrap.style.display = 'none'; }
+  // 画像
+  const imagesWrap = document.getElementById('bd-images-wrap');
+  const imagesEl = document.getElementById('bd-images');
+  if (b.images && b.images.length) {
+    imagesWrap.style.display = 'block';
+    imagesEl.innerHTML = b.images.map((src, i) =>
+      `<img class="bean-detail-img" src="${src}" onclick="openLightbox(${JSON.stringify(b.images)},${i})" alt="">`
+    ).join('');
+  } else { imagesWrap.style.display = 'none'; }
+  // 使用統計
+  document.getElementById('bd-stat').innerHTML = `このジャーナルに記録: <span>${usedCount}杯</span>`;
+  // ボタンのアクション設定
+  document.getElementById('bd-edit-btn').onclick = () => { closeBeanDetail(); openBeanModal(id); };
+  document.getElementById('bd-del-btn').onclick = () => { closeBeanDetail(); deleteBean(id); };
+  // 表示
+  document.getElementById('beanDetailModal').classList.remove('hidden');
+}
+
+function closeBeanDetail() {
+  document.getElementById('beanDetailModal').classList.add('hidden');
 }
 
 // ══════════════════════════════
