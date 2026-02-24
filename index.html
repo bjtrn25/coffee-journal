@@ -230,6 +230,11 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .month-stat{background:var(--surface);border-radius:var(--radius);text-align:center;padding:14px 8px;box-shadow:var(--shadow);}
 .month-stat-num{font-size:22px;font-weight:700;color:var(--navy);display:block;line-height:1;}
 .month-stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:3px;}
+.month-stat[style*='cursor']{transition:all .18s;border:2px solid transparent;}
+.month-stat[style*='cursor']:hover{box-shadow:var(--shadow-md);border-color:var(--border-strong);}
+.month-stat.af-active{background:var(--navy);border-color:var(--navy) !important;}
+.month-stat.af-active .month-stat-num{color:var(--yellow);}
+.month-stat.af-active .month-stat-label{color:rgba(255,255,255,.6);}
 .month-flavor-bar{background:var(--surface);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow);}
 .month-flavor-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;}
 .flavor-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
@@ -604,8 +609,8 @@ textarea{resize:none;height:60px;line-height:1.6;}
   <div class="stats">
     <div class="stat-item" id="filter-all" onclick="setJournalFilter('all')"><span class="stat-num" id="stat-total">0</span><span class="stat-label">合計</span></div>
     <div class="stat-item accent" id="filter-today" onclick="setJournalFilter('today')"><span class="stat-num" id="stat-today">0</span><span class="stat-label">今日</span></div>
-    <div class="stat-item" id="filter-hot" onclick="setJournalFilter('hot')"><span class="stat-num" id="stat-hot">0</span><span class="stat-label">ホット</span></div>
-    <div class="stat-item" id="filter-iced" onclick="setJournalFilter('iced')"><span class="stat-num" id="stat-iced">0</span><span class="stat-label">アイス</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-hot">0</span><span class="stat-label">ホット</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-iced">0</span><span class="stat-label">アイス</span></div>
   </div>
 
   <div class="card">
@@ -724,9 +729,9 @@ textarea{resize:none;height:60px;line-height:1.6;}
     </div>
   </div>
   <div class="month-summary">
-    <div class="month-stat"><span class="month-stat-num" id="ms-total">0</span><span class="month-stat-label">合計</span></div>
-    <div class="month-stat"><span class="month-stat-num" id="ms-hot">0</span><span class="month-stat-label">ホット</span></div>
-    <div class="month-stat"><span class="month-stat-num" id="ms-iced">0</span><span class="month-stat-label">アイス</span></div>
+    <div class="month-stat" id="af-all" onclick="setArchiveFilter('all')" style="cursor:pointer;"><span class="month-stat-num" id="ms-total">0</span><span class="month-stat-label">合計</span></div>
+    <div class="month-stat" id="af-hot" onclick="setArchiveFilter('hot')" style="cursor:pointer;"><span class="month-stat-num" id="ms-hot">0</span><span class="month-stat-label">ホット</span></div>
+    <div class="month-stat" id="af-iced" onclick="setArchiveFilter('iced')" style="cursor:pointer;"><span class="month-stat-num" id="ms-iced">0</span><span class="month-stat-label">アイス</span></div>
     <div class="month-stat"><span class="month-stat-num" id="ms-avg">—</span><span class="month-stat-label">平均評価</span></div>
   </div>
   <div class="month-flavor-bar" id="monthFlavorBar" style="display:none;">
@@ -1421,11 +1426,17 @@ function drawShareCard(e) {
   ctx.stroke();
   metaY += 22;
 
-  // --- タグ群（品種・プロセス・標高—焙煎度は右上に移動したので除外） ---
+  // --- タグ群（品種・プロセス・標高・焙煎日—焙煎度は右上に移動したので除外） ---
   const tags = [];
   if (e.variety) tags.push({ text: e.variety, color: 'rgba(180,140,255,0.25)', textColor: '#c8a8ff' });
   if (e.process) tags.push({ text: e.process, color: 'rgba(100,180,255,0.2)', textColor: '#82c8ff' });
   if (e.altitude) tags.push({ text: e.altitude + ' masl', color: 'rgba(100,220,150,0.18)', textColor: '#80e0a0' });
+  if (e.roastDate) {
+    const rd = new Date(e.roastDate + 'T12:00:00');
+    const rdStr = `焙煎 ${rd.getFullYear()}/${String(rd.getMonth()+1).padStart(2,'0')}/${String(rd.getDate()).padStart(2,'0')}`;
+    const roastDaysCard = Math.floor((new Date() - rd) / 86400000);
+    tags.push({ text: rdStr + `（${roastDaysCard}日前）`, color: 'rgba(255,200,100,0.18)', textColor: '#ffd580' });
+  }
 
   let tagX = 48;
   ctx.font = '500 11px "Noto Sans JP", sans-serif';
@@ -1632,24 +1643,27 @@ function setStatus(state, text) {
 let journalFilter = 'all'; // 'all' | 'today' | 'hot' | 'iced'
 
 function setJournalFilter(f) {
+  // 同じタブを再タップしたら解除（合計は常に解除できない）
   journalFilter = (journalFilter === f && f !== 'all') ? 'all' : f;
   renderJournal();
 }
 
 function renderJournal() {
   const today = new Date().toISOString().split('T')[0];
-  // フィルター適用
+  // フィルター適用（合計・今日のみ）
   let filtered = entries;
   if (journalFilter === 'today') filtered = entries.filter(e=>(e.datetime||'').startsWith(today));
-  else if (journalFilter === 'hot') filtered = entries.filter(e=>e.temp==='hot');
-  else if (journalFilter === 'iced') filtered = entries.filter(e=>e.temp==='iced');
-  // フィルターボタンのハイライト更新
-  ['all','today','hot','iced'].forEach(key => {
+  // フィルターボタンのハイライト更新（合計・今日のみ）
+  ['all','today'].forEach(key => {
     const el = document.getElementById('filter-'+key);
     if (!el) return;
-    el.classList.toggle('filter-active', journalFilter === key);
-    // 「今日」は元々accentクラスを持つが、フィルター時は上書き
-    if (key === 'today') el.classList.toggle('accent', journalFilter !== 'today');
+    // 「合計」はフィルターなしの時にアクティブ、「今日」は選択時にアクティブ
+    if (key === 'all') {
+      el.classList.toggle('filter-active', journalFilter === 'all');
+    } else if (key === 'today') {
+      el.classList.toggle('filter-active', journalFilter === 'today');
+      el.classList.toggle('accent', journalFilter !== 'today');
+    }
   });
   const list = document.getElementById('journal-list');
   if (filtered.length === 0) {
@@ -1787,6 +1801,13 @@ function renderEntryCard(e) {
 // ══════════════════════════════
 //  RENDER: ARCHIVE
 // ══════════════════════════════
+let archiveFilter = 'all'; // 'all' | 'hot' | 'iced'
+
+function setArchiveFilter(f) {
+  archiveFilter = (archiveFilter === f && f !== 'all') ? 'all' : f;
+  renderArchive();
+}
+
 function changeMonth(delta) {
   archiveMonth.m += delta;
   if (archiveMonth.m > 11) { archiveMonth.m=0; archiveMonth.y++; }
@@ -1870,6 +1891,15 @@ function renderArchive() {
   document.getElementById('ms-iced').textContent = mEntries.filter(e=>e.temp==='iced').length;
   const rated = mEntries.filter(e=>e.rating>0);
   document.getElementById('ms-avg').textContent = rated.length ? (rated.reduce((s,e)=>s+e.rating,0)/rated.length).toFixed(1) : '—';
+  // フィルターボタンのハイライト更新
+  ['all','hot','iced'].forEach(key => {
+    const el = document.getElementById('af-'+key);
+    if (el) el.classList.toggle('af-active', archiveFilter === key);
+  });
+  // フィルター適用
+  let displayEntries = mEntries;
+  if (archiveFilter === 'hot') displayEntries = mEntries.filter(e=>e.temp==='hot');
+  else if (archiveFilter === 'iced') displayEntries = mEntries.filter(e=>e.temp==='iced');
   const flavorCount = {};
   mEntries.forEach(e=>(e.flavors||[]).forEach(f=>{ flavorCount[f]=(flavorCount[f]||0)+1; }));
   const topFlavors = Object.entries(flavorCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
@@ -1885,9 +1915,14 @@ function renderArchive() {
       </div>`).join('');
   } else { flavorBar.style.display='none'; }
   const archList = document.getElementById('archive-list');
-  if (mEntries.length===0) { archList.innerHTML=`<div class="empty"><div class="empty-icon">📅</div>この月の記録はありません</div>`; return; }
+  if (displayEntries.length===0) {
+    const msg = archiveFilter !== 'all'
+      ? `<div class="empty"><div class="empty-icon">${archiveFilter==='hot'?'☕':'🧣'}</div>該当する記録がありません</div>`
+      : `<div class="empty"><div class="empty-icon">📅</div>この月の記録はありません</div>`;
+    archList.innerHTML = msg; return;
+  }
   const groups = {};
-  mEntries.forEach(e=>{const d=(e.datetime||'').split('T')[0];(groups[d]=groups[d]||[]).push(e);});
+  displayEntries.forEach(e=>{const d=(e.datetime||'').split('T')[0];(groups[d]=groups[d]||[]).push(e);});
   archList.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
     const label = formatDate(new Date(date+'T12:00:00'));
     const items = groups[date].map(e=>`
