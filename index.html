@@ -281,6 +281,27 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .bean-detail-btn.primary:hover{background:#0a3d6e;}
 .bean-detail-btn.danger{color:var(--danger);border-color:rgba(217,48,37,.3);}
 .bean-detail-btn.danger:hover{background:rgba(217,48,37,.06);border-color:var(--danger);}
+/* ENTRY DETAIL MODAL */
+.entry-detail-overlay{position:fixed;inset:0;background:rgba(5,45,87,.55);z-index:600;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.entry-detail-overlay.hidden{display:none;}
+.entry-detail-modal{background:var(--surface);border-radius:var(--radius);padding:24px 24px 20px;max-width:540px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-md);}
+.entry-detail-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.entry-detail-icon{font-size:28px;flex-shrink:0;}
+.entry-detail-name{font-size:18px;font-weight:700;color:var(--navy);line-height:1.3;flex:1;}
+.entry-detail-time{font-size:12px;color:var(--text-muted);margin-top:3px;}
+.entry-detail-section{margin-bottom:14px;}
+.entry-detail-section .entry-meta{display:flex;flex-wrap:wrap;gap:5px;}
+.entry-detail-note-box{background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--text);line-height:1.6;margin-bottom:12px;}
+.entry-detail-images{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.entry-detail-img{width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;transition:opacity .15s;}
+.entry-detail-img:hover{opacity:.85;}
+.entry-detail-bean-btn{width:100%;padding:10px;background:rgba(5,45,87,.06);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;transition:all .15s;margin-bottom:12px;text-align:left;}
+.entry-detail-bean-btn:hover{background:rgba(5,45,87,.12);border-color:var(--navy);}
+.entry-detail-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border);}
+.entry-detail-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:8px 16px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500;transition:all .15s;border:1.5px solid var(--border);background:var(--surface);color:var(--text);}
+.entry-detail-btn:hover{border-color:var(--navy);color:var(--navy);}
+.entry-detail-btn.danger{color:var(--danger);border-color:rgba(217,48,37,.3);}
+.entry-detail-btn.danger:hover{background:rgba(217,48,37,.06);border-color:var(--danger);}
 .bean-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--border);padding:22px;cursor:pointer;color:var(--text-muted);font-family:'Noto Sans JP',sans-serif;font-size:13px;background:transparent;width:100%;transition:all .2s;border-radius:var(--radius);font-weight:400;}
 .bean-add-btn:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-05);}
 
@@ -571,6 +592,47 @@ textarea{resize:none;height:60px;line-height:1.6;}
       <button class="bean-detail-btn primary" id="bd-edit-btn" onclick="">✎ 編集</button>
       <button class="bean-detail-btn danger" id="bd-del-btn" onclick="">✕ 削除</button>
       <button class="bean-detail-btn" onclick="closeBeanDetail()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRY DETAIL MODAL -->
+<div class="entry-detail-overlay hidden" id="entryDetailModal" onclick="if(event.target===this)closeEntryDetail()">
+  <div class="entry-detail-modal">
+    <div class="entry-detail-header">
+      <div class="entry-detail-icon" id="ed-icon">☕</div>
+      <div style="flex:1;min-width:0;">
+        <div class="entry-detail-name" id="ed-name"></div>
+        <div class="entry-detail-time" id="ed-time"></div>
+      </div>
+      <button class="modal-close" onclick="closeEntryDetail()" style="position:static;flex-shrink:0;">×</button>
+    </div>
+    <div class="entry-detail-section">
+      <div class="entry-meta" id="ed-tags"></div>
+    </div>
+    <div class="entry-detail-section" id="ed-flavors-wrap">
+      <div class="entry-meta" id="ed-flavors"></div>
+    </div>
+    <div id="ed-roast-wrap" style="display:none;margin-bottom:10px;">
+      <div class="entry-detail" id="ed-roast"></div>
+    </div>
+    <div id="ed-altitude-wrap" style="display:none;margin-bottom:10px;">
+      <div class="entry-detail" id="ed-altitude"></div>
+    </div>
+    <div id="ed-note-wrap" style="display:none;">
+      <div class="entry-detail-note-box" id="ed-note"></div>
+    </div>
+    <div id="ed-images-wrap" style="display:none;">
+      <div class="entry-detail-images" id="ed-images"></div>
+    </div>
+    <div id="ed-bean-wrap" style="display:none;">
+      <button class="entry-detail-bean-btn" id="ed-bean-btn"></button>
+    </div>
+    <div class="entry-detail-actions">
+      <button class="entry-detail-btn" id="ed-share-btn">📤 共有</button>
+      <button class="entry-detail-btn" id="ed-edit-btn">✎ 編集</button>
+      <button class="entry-detail-btn danger" id="ed-del-btn">✕ 削除</button>
+      <button class="entry-detail-btn" onclick="closeEntryDetail()">閉じる</button>
     </div>
   </div>
 </div>
@@ -1930,7 +1992,7 @@ function renderArchive() {
   archList.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
     const label = formatDate(new Date(date+'T12:00:00'));
     const items = groups[date].map(e=>`
-      <div class="month-entry-row entry" onclick="goToEntry('${e.id}')">
+      <div class="month-entry-row entry" onclick="openEntryDetail('${e.id}')">
         <div class="bullet">${e.temp==='iced'?'🧊':'☕'}</div>
         <div class="entry-body" style="padding-right:48px">
           <div class="entry-top">
@@ -1953,6 +2015,78 @@ function renderArchive() {
       </div>`).join('');
     return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${items}</div>`;
   }).join('');
+}
+
+function openEntryDetail(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  const icon = e.temp === 'iced' ? '🧊' : '☕';
+  const roastDays = e.roastDate ? Math.floor((new Date()-new Date(e.roastDate+'T12:00:00'))/86400000) : null;
+  const flavors = e.flavors || [];
+  // ヘッダー
+  document.getElementById('ed-icon').textContent = icon;
+  document.getElementById('ed-name').textContent = e.name;
+  const timeStr = e.datetime ? formatDate(new Date(e.datetime.split('T')[0]+'T12:00:00')) + ' ' + formatTime(new Date(e.datetime)) : '';
+  document.getElementById('ed-time').textContent = timeStr;
+  // タグ
+  document.getElementById('ed-tags').innerHTML = [
+    `<span class="tag temp-tag">${e.temp==='iced'?'アイス':'ホット'}</span>`,
+    e.variety ? `<span class="tag variety">🌿 ${escHTML(e.variety)}</span>` : '',
+    e.place ? `<span class="tag">📍 ${escHTML(e.place)}</span>` : '',
+    e.process ? `<span class="tag process">${escHTML(e.process)}</span>` : '',
+    e.roastLevel ? `<span class="tag roast-tag" data-roast="${escHTML(e.roastLevel)}">${escHTML(e.roastLevel)}</span>` : '',
+    e.rating ? `<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>` : '',
+  ].join('');
+  // フレーバー
+  const flavWrap = document.getElementById('ed-flavors-wrap');
+  if (flavors.length) {
+    flavWrap.style.display = 'block';
+    document.getElementById('ed-flavors').innerHTML = flavors.map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('');
+  } else { flavWrap.style.display = 'none'; }
+  // 焙煎日
+  const roastWrap = document.getElementById('ed-roast-wrap');
+  if (roastDays !== null) {
+    roastWrap.style.display = 'block';
+    document.getElementById('ed-roast').innerHTML = `焙煎日: <span>${e.roastDate}（${roastDays}日前）</span>`;
+  } else { roastWrap.style.display = 'none'; }
+  // 標高
+  const altWrap = document.getElementById('ed-altitude-wrap');
+  if (e.altitude) {
+    altWrap.style.display = 'block';
+    document.getElementById('ed-altitude').innerHTML = `標高: <span>${escHTML(e.altitude)} masl</span>`;
+  } else { altWrap.style.display = 'none'; }
+  // メモ
+  const noteWrap = document.getElementById('ed-note-wrap');
+  if (e.note) {
+    noteWrap.style.display = 'block';
+    document.getElementById('ed-note').textContent = e.note;
+  } else { noteWrap.style.display = 'none'; }
+  // 画像
+  const imagesWrap = document.getElementById('ed-images-wrap');
+  if (e.images && e.images.length) {
+    imagesWrap.style.display = 'block';
+    document.getElementById('ed-images').innerHTML = e.images.map((src,i)=>
+      `<img class="entry-detail-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})" alt="">`
+    ).join('');
+  } else { imagesWrap.style.display = 'none'; }
+  // 豆情報
+  const beanWrap = document.getElementById('ed-bean-wrap');
+  const bean = e.beanId ? beans.find(b => b.id === e.beanId) : null;
+  if (bean) {
+    beanWrap.style.display = 'block';
+    document.getElementById('ed-bean-btn').innerHTML = `🌱 豆の詳細: <strong>${escHTML(bean.name)}</strong>${bean.variety?' — '+escHTML(bean.variety):''}  ›`;
+    document.getElementById('ed-bean-btn').onclick = () => { closeEntryDetail(); openBeanDetail(bean.id); };
+  } else { beanWrap.style.display = 'none'; }
+  // ボタン
+  document.getElementById('ed-share-btn').onclick = () => { closeEntryDetail(); openShareModal(id); };
+  document.getElementById('ed-edit-btn').onclick = () => { closeEntryDetail(); showPage('journal'); setTimeout(()=>startEdit(id),100); };
+  document.getElementById('ed-del-btn').onclick = () => { closeEntryDetail(); deleteEntry(id).then(()=>renderArchive()); };
+  // 表示
+  document.getElementById('entryDetailModal').classList.remove('hidden');
+}
+
+function closeEntryDetail() {
+  document.getElementById('entryDetailModal').classList.add('hidden');
 }
 
 function goToEntry(id) {
