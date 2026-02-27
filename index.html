@@ -281,7 +281,37 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .bean-detail-btn.primary:hover{background:#0a3d6e;}
 .bean-detail-btn.danger{color:var(--danger);border-color:rgba(217,48,37,.3);}
 .bean-detail-btn.danger:hover{background:rgba(217,48,37,.06);border-color:var(--danger);}
-/* ENTRY DETAIL MODAL */
+
+/* ── INSIGHTS PAGE ── */
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;}
+.insight-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;}
+.insight-card.full{grid-column:1/-1;}
+.insight-card-title{font-size:11px;font-weight:700;color:var(--navy-50);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;}
+.insight-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.insight-stat{text-align:center;}
+.insight-stat-num{font-size:26px;font-weight:800;color:var(--navy);line-height:1;}
+.insight-stat-label{font-size:11px;color:var(--navy-50);margin-top:3px;}
+.insight-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.insight-bar-label{font-size:12px;font-weight:600;color:var(--navy);width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.insight-bar-track{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden;}
+.insight-bar-fill{height:100%;border-radius:99px;background:var(--navy);transition:width .4s ease;}
+.insight-bar-count{font-size:11px;color:var(--navy-50);width:24px;text-align:right;flex-shrink:0;}
+.insight-donut-wrap{display:flex;align-items:center;gap:16px;}
+.insight-legend{flex:1;}
+.insight-legend-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px;color:var(--navy);}
+.insight-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.insight-chart-canvas{display:block;}
+.insight-empty{text-align:center;color:var(--navy-50);font-size:13px;padding:20px 0;}
+.insight-hot-iced{display:flex;height:14px;border-radius:99px;overflow:hidden;margin-bottom:8px;}
+.insight-hot-bar{background:var(--navy);transition:width .4s;}
+.insight-iced-bar{background:var(--yellow);transition:width .4s;}
+.insight-hi-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--navy-50);}
+.insight-rating-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.insight-rating-stars{font-size:12px;color:var(--yellow);width:60px;flex-shrink:0;}
+.insight-month-canvas{width:100%;}
+@media(max-width:480px){.insight-grid{grid-template-columns:1fr;}.insight-card.full{grid-column:1;}.insight-summary-grid{grid-template-columns:1fr 1fr;}}
+
+/* ── ENTRY DETAIL MODAL ── */
 .entry-detail-overlay{position:fixed;inset:0;background:rgba(5,45,87,.55);z-index:600;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
 .entry-detail-overlay.hidden{display:none;}
 .entry-detail-modal{background:var(--surface);border-radius:var(--radius);padding:24px 24px 20px;max-width:540px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-md);}
@@ -596,6 +626,61 @@ textarea{resize:none;height:60px;line-height:1.6;}
   </div>
 </div>
 
+<!-- INSIGHTS PAGE -->
+<div class="page" id="page-insights">
+  <div class="insight-grid">
+    <!-- サマリー -->
+    <div class="insight-card full">
+      <div class="insight-card-title">📊 サマリー</div>
+      <div class="insight-summary-grid">
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-total">0</div><div class="insight-stat-label">総記録数</div></div>
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-avg">—</div><div class="insight-stat-label">平均評価</div></div>
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-days">—</div><div class="insight-stat-label">記録期間（日）</div></div>
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-beans-used">—</div><div class="insight-stat-label">使用豆種類</div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="insight-hot-iced"><div class="insight-hot-bar" id="ins-hot-bar" style="width:50%"></div><div class="insight-iced-bar" id="ins-iced-bar" style="width:50%"></div></div>
+        <div class="insight-hi-labels"><span id="ins-hot-label">☕ ホット 0</span><span id="ins-iced-label">🧊 アイス 0</span></div>
+      </div>
+    </div>
+    <!-- フレーバートップ -->
+    <div class="insight-card full" id="ins-flavor-card">
+      <div class="insight-card-title">🍃 好きなフレーバー Top 10</div>
+      <div id="ins-flavors"></div>
+    </div>
+    <!-- 焙煎度分布 -->
+    <div class="insight-card full" id="ins-roast-card">
+      <div class="insight-card-title">🔥 焙煎度の分布</div>
+      <div id="ins-roasts"></div>
+    </div>
+    <!-- 評価分布 -->
+    <div class="insight-card">
+      <div class="insight-card-title">★ 評価の分布</div>
+      <div id="ins-ratings"></div>
+    </div>
+    <!-- プロセス分布 -->
+    <div class="insight-card">
+      <div class="insight-card-title">⚙️ プロセス</div>
+      <div id="ins-processes"></div>
+    </div>
+    <!-- 場所ランキング -->
+    <div class="insight-card full" id="ins-place-card">
+      <div class="insight-card-title">📍 よく訪れる場所 Top 8</div>
+      <div id="ins-places"></div>
+    </div>
+    <!-- お気に入り豆 -->
+    <div class="insight-card full" id="ins-bean-card">
+      <div class="insight-card-title">🌱 お気に入りの豆 Top 5</div>
+      <div id="ins-beans"></div>
+    </div>
+    <!-- 月別推移 -->
+    <div class="insight-card full">
+      <div class="insight-card-title">📅 月別記録数の推移</div>
+      <canvas id="ins-month-chart" class="insight-month-canvas" height="120"></canvas>
+    </div>
+  </div>
+</div>
+
 <!-- ENTRY DETAIL MODAL -->
 <div class="entry-detail-overlay hidden" id="entryDetailModal" onclick="if(event.target===this)closeEntryDetail()">
   <div class="entry-detail-modal">
@@ -659,6 +744,7 @@ textarea{resize:none;height:60px;line-height:1.6;}
     <button class="nav-tab active" onclick="showPage('journal')">☕ ジャーナル</button>
     <button class="nav-tab" onclick="showPage('archive')">📅 月別アーカイブ</button>
     <button class="nav-tab" onclick="showPage('beans')">🌱 豆データベース</button>
+    <button class="nav-tab" onclick="showPage('insights')">📊 インサイト</button>
   </nav>
 </header>
 
@@ -1161,9 +1247,10 @@ const navBtns = document.querySelectorAll('.nav-tab');
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  navBtns.forEach((b,i) => b.classList.toggle('active', ['journal','archive','beans'][i] === name));
+  navBtns.forEach((b,i) => b.classList.toggle('active', ['journal','archive','beans','insights'][i] === name));
   if (name === 'archive') renderArchive();
   if (name === 'beans') renderBeans();
+  if (name === 'insights') renderInsights();
 }
 
 // ══════════════════════════════
@@ -2136,6 +2223,180 @@ function renderBeans() {
 // ══════════════════════════════
 //  BEAN DETAIL MODAL
 // ══════════════════════════════
+// ══════════════════════════════
+//  RENDER: INSIGHTS
+// ══════════════════════════════
+function renderInsights() {
+  if (!entries.length) {
+    ['ins-flavors','ins-roasts','ins-ratings','ins-processes','ins-places','ins-beans'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="insight-empty">記録がまだありません</div>';
+    });
+    return;
+  }
+
+  const total = entries.length;
+  const rated = entries.filter(e => e.rating > 0);
+  const avgRating = rated.length ? (rated.reduce((s,e) => s + e.rating, 0) / rated.length).toFixed(1) : '—';
+  const dates = entries.map(e => e.datetime ? e.datetime.split('T')[0] : null).filter(Boolean).sort();
+  const daySpan = dates.length >= 2 ? Math.floor((new Date(dates[dates.length-1]) - new Date(dates[0])) / 86400000) + 1 : 1;
+  const beanIds = new Set(entries.map(e => e.beanId).filter(Boolean));
+  const hotCount = entries.filter(e => e.temp === 'hot').length;
+  const icedCount = entries.filter(e => e.temp === 'iced').length;
+
+  // サマリー
+  document.getElementById('ins-total').textContent = total;
+  document.getElementById('ins-avg').textContent = avgRating;
+  document.getElementById('ins-days').textContent = daySpan;
+  document.getElementById('ins-beans-used').textContent = beanIds.size || '—';
+  const hotPct = total ? (hotCount / total * 100).toFixed(0) : 50;
+  const icedPct = 100 - hotPct;
+  document.getElementById('ins-hot-bar').style.width = hotPct + '%';
+  document.getElementById('ins-iced-bar').style.width = icedPct + '%';
+  document.getElementById('ins-hot-label').textContent = `☕ ホット ${hotCount} (${hotPct}%)`;
+  document.getElementById('ins-iced-label').textContent = `🧊 アイス ${icedCount} (${icedPct}%)`;
+
+  function renderBars(containerId, data, colorFn) {
+    const el = document.getElementById(containerId);
+    if (!data.length) { el.innerHTML = '<div class="insight-empty">データなし</div>'; return; }
+    const max = data[0][1];
+    el.innerHTML = data.map(([label, count]) => {
+      const pct = (count / max * 100).toFixed(0);
+      const color = colorFn ? colorFn(label) : 'var(--navy)';
+      return `<div class="insight-bar-row">
+        <div class="insight-bar-label" title="${escHTML(label)}">${escHTML(label)}</div>
+        <div class="insight-bar-track"><div class="insight-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="insight-bar-count">${count}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // フレーバー Top 10
+  const flavorMap = {};
+  entries.forEach(e => (e.flavors||[]).forEach(f => { flavorMap[f] = (flavorMap[f]||0) + 1; }));
+  const flavorData = Object.entries(flavorMap).sort((a,b) => b[1]-a[1]).slice(0,10);
+  renderBars('ins-flavors', flavorData, () => 'var(--navy)');
+
+  // 焙煎度分布
+  const roastOrder = ['ライト','シナモン','ミディアム','ハイ','シティ','フルシティ','フレンチ','イタリアン'];
+  const roastColors = {
+    'ライト':'#D9F7A2','シナモン':'#F6DE8B','ミディアム':'#E8C36A',
+    'ハイ':'#A95522','シティ':'#8B4A2A','フルシティ':'#5B2D1A',
+    'フレンチ':'#3D1A0E','イタリアン':'#1E0A05'
+  };
+  const roastMap = {};
+  entries.forEach(e => { if (e.roastLevel) roastMap[e.roastLevel] = (roastMap[e.roastLevel]||0) + 1; });
+  const roastData = roastOrder.filter(r => roastMap[r]).map(r => [r, roastMap[r]]);
+  const otherRoast = Object.entries(roastMap).filter(([r]) => !roastOrder.includes(r)).sort((a,b) => b[1]-a[1]);
+  renderBars('ins-roasts', [...roastData, ...otherRoast], label => roastColors[label] || 'var(--navy)');
+
+  // 評価分布
+  const ratingEl = document.getElementById('ins-ratings');
+  const ratingMap = {1:0,2:0,3:0,4:0,5:0};
+  entries.forEach(e => { if (e.rating) ratingMap[e.rating]++; });
+  const maxR = Math.max(...Object.values(ratingMap), 1);
+  ratingEl.innerHTML = [5,4,3,2,1].map(r => {
+    const pct = (ratingMap[r] / maxR * 100).toFixed(0);
+    return `<div class="insight-rating-row">
+      <div class="insight-rating-stars">${'★'.repeat(r)}${'\u2606'.repeat(5-r)}</div>
+      <div class="insight-bar-track" style="flex:1"><div class="insight-bar-fill" style="width:${pct}%;background:var(--yellow)"></div></div>
+      <div class="insight-bar-count">${ratingMap[r]}</div>
+    </div>`;
+  }).join('');
+
+  // プロセス分布
+  const processMap = {};
+  entries.forEach(e => { if (e.process) processMap[e.process] = (processMap[e.process]||0) + 1; });
+  const processData = Object.entries(processMap).sort((a,b) => b[1]-a[1]);
+  const processColors = ['①','②','③','④','⑤'].map((_,i) => `hsl(${200+i*30},60%,45%)`);
+  renderBars('ins-processes', processData, (label) => {
+    const idx = processData.findIndex(([l]) => l === label);
+    return processColors[idx % processColors.length];
+  });
+
+  // 場所ランキング Top 8
+  const placeMap = {};
+  entries.forEach(e => { if (e.place) placeMap[e.place] = (placeMap[e.place]||0) + 1; });
+  const placeData = Object.entries(placeMap).sort((a,b) => b[1]-a[1]).slice(0,8);
+  renderBars('ins-places', placeData, () => '#4A90D9');
+
+  // お気に入り豆 Top 5
+  const beanCountMap = {};
+  entries.forEach(e => { if (e.beanId) beanCountMap[e.beanId] = (beanCountMap[e.beanId]||0) + 1; });
+  const beanData = Object.entries(beanCountMap).sort((a,b) => b[1]-a[1]).slice(0,5).map(([id, count]) => {
+    const b = beans.find(x => x.id === id);
+    return [b ? b.name : '不明', count];
+  });
+  renderBars('ins-beans', beanData, () => '#7B5EA7');
+
+  // 月別推移チャート
+  const monthMap = {};
+  entries.forEach(e => {
+    if (!e.datetime) return;
+    const ym = e.datetime.slice(0,7);
+    monthMap[ym] = (monthMap[ym]||0) + 1;
+  });
+  const months = Object.keys(monthMap).sort();
+  const canvas = document.getElementById('ins-month-chart');
+  canvas.width = canvas.parentElement.offsetWidth || 320;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = {top:20, right:16, bottom:30, left:32};
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+  const maxVal = Math.max(...Object.values(monthMap), 1);
+  ctx.clearRect(0, 0, W, H);
+  // グリッド線
+  ctx.strokeStyle = 'rgba(5,45,87,0.08)';
+  ctx.lineWidth = 1;
+  [0.25,0.5,0.75,1].forEach(r => {
+    const y = pad.top + chartH * (1 - r);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(5,45,87,0.35)'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(maxVal * r), pad.left - 4, y + 4);
+  });
+  if (months.length < 2) {
+    ctx.fillStyle = 'rgba(5,45,87,0.4)'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('記録が2ヶ月以上になると推移が表示されます', W/2, H/2);
+    return;
+  }
+  // 塗りつぶしエリア
+  const pts = months.map((m, i) => ({
+    x: pad.left + (i / (months.length - 1)) * chartW,
+    y: pad.top + chartH * (1 - monthMap[m] / maxVal)
+  }));
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, pad.top + chartH);
+  ctx.lineTo(pts[0].x, pad.top + chartH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+  grad.addColorStop(0, 'rgba(5,45,87,0.25)');
+  grad.addColorStop(1, 'rgba(5,45,87,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  // 折れ線
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = 'var(--navy)'; ctx.lineWidth = 2; ctx.stroke();
+  // 点
+  pts.forEach((p, i) => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = 'var(--navy)'; ctx.fill();
+    ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
+  });
+  // X軸ラベル
+  ctx.fillStyle = 'rgba(5,45,87,0.45)'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+  const step = Math.max(1, Math.ceil(months.length / 6));
+  months.forEach((m, i) => {
+    if (i % step !== 0 && i !== months.length - 1) return;
+    const p = pts[i];
+    ctx.fillText(m.slice(2).replace('-','/'), p.x, pad.top + chartH + 18);
+  });
+}
+
 function openBeanDetail(id) {
   const b = beans.find(x => x.id === id);
   if (!b) return;
