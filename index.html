@@ -231,6 +231,32 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .month-stat-num{font-size:22px;font-weight:700;color:var(--navy);display:block;line-height:1;}
 .month-stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:block;margin-top:3px;}
 .month-stat[style*='cursor']{transition:all .18s;border:2px solid transparent;}
+
+/* ── MONTHLY LOG CALENDAR ── */
+.monthly-log{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px 10px;margin-bottom:14px;}
+.monthly-log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.monthly-log-title{font-size:11px;font-weight:700;color:var(--navy-50);letter-spacing:.08em;text-transform:uppercase;}
+.monthly-log-legend{display:flex;gap:10px;}
+.monthly-log-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);}
+.monthly-log-legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.monthly-log-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.mlg-dow{text-align:center;font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;padding-bottom:4px;}
+.mlg-dow.sun{color:#c0392b;}
+.mlg-dow.sat{color:#2980b9;}
+.mlg-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;position:relative;cursor:default;transition:background .15s;min-width:0;}
+.mlg-cell.has-entry{cursor:pointer;}
+.mlg-cell.has-entry:hover{background:rgba(5,45,87,.06);}
+.mlg-cell.today .mlg-date{border:2px solid var(--yellow);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.mlg-cell.empty{pointer-events:none;}
+.mlg-date{font-size:11px;font-weight:500;color:var(--text-muted);line-height:1;}
+.mlg-cell.has-entry .mlg-date{color:var(--navy);font-weight:700;}
+.mlg-cell.sun .mlg-date{color:#c0392b;}
+.mlg-cell.sat .mlg-date{color:#2980b9;}
+.mlg-dots{display:flex;gap:2px;margin-top:2px;flex-wrap:wrap;justify-content:center;max-width:28px;}
+.mlg-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.mlg-dot.hot{background:var(--navy);}
+.mlg-dot.iced{background:#4A90D9;}
+.mlg-count{font-size:8px;font-weight:700;color:var(--navy);margin-top:1px;line-height:1;}
 .month-stat[style*='cursor']:hover{box-shadow:var(--shadow-md);border-color:var(--border-strong);}
 .month-stat.af-active{background:var(--navy);border-color:var(--navy) !important;}
 .month-stat.af-active .month-stat-num{color:var(--yellow);}
@@ -876,6 +902,18 @@ textarea{resize:none;height:60px;line-height:1.6;}
       <div class="month-picker-grid" id="pickerGrid"></div>
     </div>
   </div>
+  <!-- MONTHLY LOG CALENDAR -->
+  <div class="monthly-log" id="monthlyLogCalendar">
+    <div class="monthly-log-header">
+      <span class="monthly-log-title">🗓 Monthly Log</span>
+      <div class="monthly-log-legend">
+        <div class="monthly-log-legend-item"><span class="monthly-log-legend-dot" style="background:var(--navy)"></span>ホット</div>
+        <div class="monthly-log-legend-item"><span class="monthly-log-legend-dot" style="background:#4A90D9"></span>アイス</div>
+      </div>
+    </div>
+    <div class="monthly-log-grid" id="monthlyLogGrid"></div>
+  </div>
+
   <div class="month-summary">
     <div class="month-stat" id="af-all" onclick="setArchiveFilter('all')" style="cursor:pointer;"><span class="month-stat-num" id="ms-total">0</span><span class="month-stat-label">合計</span></div>
     <div class="month-stat" id="af-hot" onclick="setArchiveFilter('hot')" style="cursor:pointer;"><span class="month-stat-num" id="ms-hot">0</span><span class="month-stat-label">ホット</span></div>
@@ -2034,11 +2072,93 @@ document.addEventListener('click', (e) => {
   if (nav && !nav.contains(e.target)) closeMonthPicker();
 });
 
+function renderMonthlyLog(y, m, mEntries) {
+  const grid = document.getElementById('monthlyLogGrid');
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const firstDow = new Date(y, m, 1).getDay(); // 0=Sun
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  // 日別マップ（YYYY-MM-DD → {hot, iced}）
+  const dayMap = {};
+  mEntries.forEach(e => {
+    const d = (e.datetime||'').split('T')[0];
+    if (!d) return;
+    if (!dayMap[d]) dayMap[d] = {hot:0, iced:0};
+    if (e.temp === 'iced') dayMap[d].iced++;
+    else dayMap[d].hot++;
+  });
+
+  const dows = ['日','月','火','水','木','金','土'];
+  let html = dows.map((d,i) =>
+    `<div class="mlg-dow${i===0?' sun':i===6?' sat':''}">${d}</div>`
+  ).join('');
+
+  // 空白セル（月の先頭曜日分）
+  for (let i = 0; i < firstDow; i++) {
+    html += '<div class="mlg-cell empty"></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(y, m, d).getDay();
+    const info = dayMap[dateStr];
+    const total = info ? info.hot + info.iced : 0;
+    const isToday = dateStr === todayStr;
+    const hasSun = dow === 0;
+    const hasSat = dow === 6;
+
+    let classes = 'mlg-cell';
+    if (info) classes += ' has-entry';
+    if (isToday) classes += ' today';
+    if (hasSun) classes += ' sun';
+    if (hasSat) classes += ' sat';
+
+    let dotsHtml = '';
+    if (info) {
+      // ホットドット（最大4個）
+      const hotDots = Math.min(info.hot, 4);
+      const icedDots = Math.min(info.iced, 4 - hotDots);
+      const dots = Array(hotDots).fill('<span class="mlg-dot hot"></span>')
+        .concat(Array(icedDots).fill('<span class="mlg-dot iced"></span>'));
+      dotsHtml = `<div class="mlg-dots">${dots.join('')}</div>`;
+      if (total > 4) dotsHtml += `<div class="mlg-count">${total}</div>`;
+    }
+
+    const onclick = info ? `onclick="scrollToDate('${dateStr}')"` : '';
+    html += `<div class="${classes}" ${onclick} title="${dateStr}${info?' ('+total+'杯)':''}">
+      <div class="mlg-date">${d}</div>
+      ${dotsHtml}
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function scrollToDate(dateStr) {
+  // フィルターを全件に戻す
+  if (archiveFilter !== 'all') setArchiveFilter('all');
+  // 該当日付のグループを探す
+  setTimeout(() => {
+    const groups = document.querySelectorAll('#archive-list .date-group');
+    for (const g of groups) {
+      const label = g.querySelector('.date-label');
+      if (label && g.dataset.date === dateStr) {
+        g.scrollIntoView({behavior:'smooth', block:'start'});
+        g.style.background = 'rgba(5,45,87,0.04)';
+        setTimeout(() => g.style.background = '', 1200);
+        return;
+      }
+    }
+  }, 50);
+}
+
 function renderArchive() {
   const {y,m} = archiveMonth;
   document.getElementById('monthDisplayText').textContent = `${y}年 ${m+1}月`;
   const prefix = `${y}-${String(m+1).padStart(2,'0')}`;
   const mEntries = entries.filter(e=>(e.datetime||'').startsWith(prefix));
+  // マンスリーログカレンダーを描画
+  renderMonthlyLog(y, m, mEntries);
   document.getElementById('ms-total').textContent = mEntries.length;
   document.getElementById('ms-hot').textContent = mEntries.filter(e=>e.temp==='hot').length;
   document.getElementById('ms-iced').textContent = mEntries.filter(e=>e.temp==='iced').length;
@@ -2100,7 +2220,7 @@ function renderArchive() {
           <button class="icon-btn del" onclick="event.stopPropagation();deleteEntry('${e.id}').then(()=>renderArchive())" title="削除">✕</button>
         </div>
       </div>`).join('');
-    return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${items}</div>`;
+    return `<div class="date-group" data-date="${date}"><div class="date-label"><span>${label}</span></div>${items}</div>`;
   }).join('');
 }
 
