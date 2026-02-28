@@ -577,7 +577,8 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .entry-detail-bean-btn{width:100%;padding:10px;background:rgba(5,45,87,.06);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;transition:all .15s;margin-bottom:12px;text-align:left;}
 .entry-detail-bean-btn:hover{background:rgba(5,45,87,.12);border-color:var(--navy);}
 .entry-detail-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border);}
-.entry-detail-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:8px 16px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500;transition:all .15s;border:1.5px solid var(--border);background:var(--surface);color:var(--text);}
+.entry-detail-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:8px 16px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500;transition:all .15s;border:1.5px solid var(--border);background:var(--surface);color:var(--text);display:inline-flex;align-items:center;gap:6px;}
+.btn-icon{width:16px;height:16px;object-fit:contain;opacity:0.65;flex-shrink:0;}
 .entry-detail-btn:hover{border-color:var(--navy);color:var(--navy);}
 .entry-detail-btn.danger{color:var(--danger);border-color:rgba(217,48,37,.3);}
 .entry-detail-btn.danger:hover{background:rgba(217,48,37,.06);border-color:var(--danger);}
@@ -950,10 +951,10 @@ textarea{resize:none;height:60px;line-height:1.6;}
       <button class="entry-detail-bean-btn" id="ed-bean-btn"></button>
     </div>
     <div class="entry-detail-actions">
-      <button class="entry-detail-btn" id="ed-share-btn">Share</button>
-      <button class="entry-detail-btn" id="ed-edit-btn">Edit</button>
-      <button class="entry-detail-btn danger" id="ed-del-btn">Delete</button>
-      <button class="entry-detail-btn" onclick="closeEntryDetail()">Close</button>
+      <button class="entry-detail-btn" id="ed-share-btn"><img src="icons/share.png" class="btn-icon" alt="">Share</button>
+      <button class="entry-detail-btn" id="ed-edit-btn"><img src="icons/edit.png" class="btn-icon" alt="">Edit</button>
+      <button class="entry-detail-btn danger" id="ed-del-btn"><img src="icons/delete.png" class="btn-icon" alt="">Delete</button>
+      <button class="entry-detail-btn" onclick="closeEntryDetail()"><img src="icons/close.png" class="btn-icon" alt="">Close</button>
     </div>
   </div>
 </div>
@@ -1211,7 +1212,7 @@ textarea{resize:none;height:60px;line-height:1.6;}
 // ══════════════════════════════
 const FLAVORS = {
   'Fruits':['Blueberry','Strawberry','Raspberry','Cherry','Plum','Peach','Apricot','Mango','Papaya','Pineapple','Citrus','Lemon','Orange','Grapefruit','Lime'],
-  'Nuts / Choco':['Almond','Hazelnut','Walnut','Dark Chocolate','Milk Chocolate','Cacao Nib','Caramel','Toffee','Butter'],
+  'Nuts / Chocolate':['Almond','Hazelnut','Walnut','Dark Chocolate','Milk Chocolate','Cacao Nib','Caramel','Toffee','Butter'],
   'Sweet / Dessert':['Brown Sugar','Honey','Maple Syrup','Vanilla','Creamy','Marzipan','Cane Sugar'],
   'Floral / Herbal':['Jasmine','Lavender','Rose','Elderflower','Chamomile','Herb','Black Tea'],
   'Spice':['Cinnamon','Clove','Cardamom','Black Pepper','Nutmeg'],
@@ -1246,7 +1247,7 @@ const JP_TO_EN = {
   'マンゴー': 'Mango', 'パパイヤ': 'Papaya', 'パイナップル': 'Pineapple',
   'シトラス': 'Citrus', 'レモン': 'Lemon', 'オレンジ': 'Orange',
   'グレープフルーツ': 'Grapefruit', 'ライム': 'Lime',
-  // Flavors - Nuts / Choco
+  // Flavors - Nuts / Chocolate
   'アーモンド': 'Almond', 'ヘーゼルナッツ': 'Hazelnut',
   'クルミ': 'Walnut', 'ダークチョコレート': 'Dark Chocolate',
   'ミルクチョコレート': 'Milk Chocolate', 'カカオニブ': 'Cacao Nib',
