@@ -2502,9 +2502,9 @@ function renderEntryCard(e) {
         <span class="entry-time">${timeStr}</span>
       </div>
       <div class="entry-meta">
+        ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
         <span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>
         ${e.variety?`<span class="tag variety">${escHTML(toEn(e.variety))}</span>`:''}
-        ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
         ${e.process?`<span class="tag process">${escHTML(toEn(e.process))}</span>`:''}
         ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>`:''}
         ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
@@ -2743,8 +2743,8 @@ function renderArchive() {
             <span class="entry-time">${e.datetime?formatTime(new Date(e.datetime)):''}</span>
           </div>
           <div class="entry-meta">
-            ${e.variety?`<span class="tag variety">${escHTML(toEn(e.variety))}</span>`:''}
             ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
+            ${e.variety?`<span class="tag variety">${escHTML(toEn(e.variety))}</span>`:''}
             ${e.process?`<span class="tag process">${escHTML(toEn(e.process))}</span>`:''}
             ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>`:''}
             ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
