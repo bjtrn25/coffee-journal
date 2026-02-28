@@ -174,10 +174,13 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-seri
   background:var(--surface);
   border-radius:16px;
   padding:32px 32px 28px;
-  width:min(400px,92vw);
+  width:min(460px,94vw);
   box-shadow:0 20px 60px rgba(5,45,87,.3);
   animation:slideUp .2s;
   text-align:center;
+  position:relative;
+  max-height:92vh;
+  overflow-y:auto;
 }
 .site-share-modal-title{
   font-family:'Playfair Display',serif;
@@ -769,11 +772,31 @@ textarea{resize:none;height:60px;line-height:1.6;}
 <!-- SITE SHARE MODAL -->
 <div class="site-share-modal-overlay hidden" id="siteShareModal" onclick="if(event.target===this)closeSiteShareModal()">
   <div class="site-share-modal">
+    <button style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;" onclick="closeSiteShareModal()">&#x2715;</button>
     <div class="site-share-modal-title">Coffee Journal</div>
     <div class="site-share-modal-sub">Share this app with your friends</div>
-    <div class="site-share-qr" id="siteShareQRWrap">
-      <canvas id="siteShareQR"></canvas>
+
+    <!-- QR + Preview Card side by side on desktop -->
+    <div style="display:flex;gap:16px;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px;">
+      <!-- QR Code -->
+      <div class="site-share-qr" id="siteShareQRWrap">
+        <canvas id="siteShareQR"></canvas>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;text-align:center;">Scan to open</div>
+      </div>
+      <!-- Site Share Card Preview -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <canvas id="siteShareCanvas" style="border-radius:10px;box-shadow:0 4px 20px rgba(5,45,87,.18);max-width:220px;width:100%;"></canvas>
+        <button class="site-share-copy-btn" onclick="downloadSiteCard()" style="width:100%;max-width:220px;">Save Image</button>
+      </div>
     </div>
+
+    <!-- Instagram -->
+    <a href="https://www.instagram.com/tsubaki_no?igsh=M2Jxa3I1bGh2YnVj&utm_source=qr" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);border-radius:10px;padding:10px 18px;margin-bottom:16px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      <span style="color:white;font-size:13px;font-weight:600;">Follow @tsubaki_no</span>
+    </a>
+
+    <!-- URL Row -->
     <div class="site-share-url-row">
       <input class="site-share-url-input" id="siteShareUrl" value="https://bjtrn25.github.io/coffee-journal/" readonly onclick="this.select()">
       <button class="site-share-copy-btn" id="siteShareCopyBtn" onclick="copySiteUrl()">Copy</button>
@@ -893,60 +916,6 @@ textarea{resize:none;height:60px;line-height:1.6;}
   </div>
 </div>
 
-<!-- INSIGHTS PAGE -->
-<div class="page" id="page-insights">
-  <div class="insight-grid">
-    <!-- サマリー -->
-    <div class="insight-card full">
-      <div class="insight-card-title">Summary</div>
-      <div class="insight-summary-grid">
-        <div class="insight-stat"><div class="insight-stat-num" id="ins-total">0</div><div class="insight-stat-label">Total</div></div>
-        <div class="insight-stat"><div class="insight-stat-num" id="ins-avg">—</div><div class="insight-stat-label">Avg Rating</div></div>
-        <div class="insight-stat"><div class="insight-stat-num" id="ins-days">—</div><div class="insight-stat-label">Days</div></div>
-        <div class="insight-stat"><div class="insight-stat-num" id="ins-beans-used">—</div><div class="insight-stat-label">Bean Types</div></div>
-      </div>
-      <div style="margin-top:14px;">
-        <div class="insight-hot-iced"><div class="insight-hot-bar" id="ins-hot-bar" style="width:50%"></div><div class="insight-iced-bar" id="ins-iced-bar" style="width:50%"></div></div>
-        <div class="insight-hi-labels"><span id="ins-hot-label">Hot 0</span><span id="ins-iced-label">Iced 0</span></div>
-      </div>
-    </div>
-    <!-- フレーバートップ -->
-    <div class="insight-card full" id="ins-flavor-card">
-      <div class="insight-card-title">Favorite Flavors Top 10</div>
-      <div id="ins-flavors"></div>
-    </div>
-    <!-- 焙煎度分布 -->
-    <div class="insight-card full" id="ins-roast-card">
-      <div class="insight-card-title">Roast Level Distribution</div>
-      <div id="ins-roasts"></div>
-    </div>
-    <!-- 評価分布 -->
-    <div class="insight-card">
-      <div class="insight-card-title">Rating Distribution</div>
-      <div id="ins-ratings"></div>
-    </div>
-    <!-- プロセス分布 -->
-    <div class="insight-card">
-      <div class="insight-card-title">Process</div>
-      <div id="ins-processes"></div>
-    </div>
-    <!-- 場所ランキング -->
-    <div class="insight-card full" id="ins-place-card">
-      <div class="insight-card-title">Top Places</div>
-      <div id="ins-places"></div>
-    </div>
-    <!-- お気に入り豆 -->
-    <div class="insight-card full" id="ins-bean-card">
-      <div class="insight-card-title">Favorite Beans Top 5</div>
-      <div id="ins-beans"></div>
-    </div>
-    <!-- 月別推移 -->
-    <div class="insight-card full">
-      <div class="insight-card-title">Monthly Trend</div>
-      <canvas id="ins-month-chart" class="insight-month-canvas" height="120"></canvas>
-    </div>
-  </div>
-</div>
 
 <!-- ENTRY DETAIL MODAL -->
 <div class="entry-detail-overlay hidden" id="entryDetailModal" onclick="if(event.target===this)closeEntryDetail()">
@@ -1017,6 +986,61 @@ textarea{resize:none;height:60px;line-height:1.6;}
     <button class="nav-tab" onclick="showPage('insights')">Insights</button>
   </nav>
 </header>
+
+<!-- INSIGHTS PAGE -->
+<div class="page" id="page-insights">
+  <div class="insight-grid">
+    <!-- サマリー -->
+    <div class="insight-card full">
+      <div class="insight-card-title">Summary</div>
+      <div class="insight-summary-grid">
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-total">0</div><div class="insight-stat-label">Total</div></div>
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-avg">—</div><div class="insight-stat-label">Avg Rating</div></div>
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-days">—</div><div class="insight-stat-label">Days</div></div>
+        <div class="insight-stat"><div class="insight-stat-num" id="ins-beans-used">—</div><div class="insight-stat-label">Bean Types</div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="insight-hot-iced"><div class="insight-hot-bar" id="ins-hot-bar" style="width:50%"></div><div class="insight-iced-bar" id="ins-iced-bar" style="width:50%"></div></div>
+        <div class="insight-hi-labels"><span id="ins-hot-label">Hot 0</span><span id="ins-iced-label">Iced 0</span></div>
+      </div>
+    </div>
+    <!-- フレーバートップ -->
+    <div class="insight-card full" id="ins-flavor-card">
+      <div class="insight-card-title">Favorite Flavors Top 10</div>
+      <div id="ins-flavors"></div>
+    </div>
+    <!-- 焙煎度分布 -->
+    <div class="insight-card full" id="ins-roast-card">
+      <div class="insight-card-title">Roast Level Distribution</div>
+      <div id="ins-roasts"></div>
+    </div>
+    <!-- 評価分布 -->
+    <div class="insight-card">
+      <div class="insight-card-title">Rating Distribution</div>
+      <div id="ins-ratings"></div>
+    </div>
+    <!-- プロセス分布 -->
+    <div class="insight-card">
+      <div class="insight-card-title">Process</div>
+      <div id="ins-processes"></div>
+    </div>
+    <!-- 場所ランキング -->
+    <div class="insight-card full" id="ins-place-card">
+      <div class="insight-card-title">Top Places</div>
+      <div id="ins-places"></div>
+    </div>
+    <!-- お気に入り豆 -->
+    <div class="insight-card full" id="ins-bean-card">
+      <div class="insight-card-title">Favorite Beans Top 5</div>
+      <div id="ins-beans"></div>
+    </div>
+    <!-- 月別推移 -->
+    <div class="insight-card full">
+      <div class="insight-card-title">Monthly Trend</div>
+      <canvas id="ins-month-chart" class="insight-month-canvas" height="120"></canvas>
+    </div>
+  </div>
+</div>
 
 <!-- PAGE: JOURNAL -->
 <div class="page active" id="page-journal">
@@ -2100,7 +2124,7 @@ function openSiteShareModal() {
     canvas.style.display = 'block';
     if (qrWrap) qrWrap.style.display = 'flex';
     QRCode.toCanvas(canvas, SITE_URL, {
-      width: 180,
+      width: 160,
       margin: 2,
       color: { dark: '#052D57', light: '#ffffff' }
     }, (err) => {
@@ -2108,14 +2132,136 @@ function openSiteShareModal() {
         console.error(err);
         if (qrWrap) qrWrap.style.display = 'none';
       }
+      // QR生成後にシェアカードも描画
+      drawSiteShareCard();
     });
   } else {
-    // QRライブラリが読み込まれていない場合はQRエリアを非表示
     if (qrWrap) qrWrap.style.display = 'none';
+    drawSiteShareCard();
   }
   // ESCキーで閉じる
   document._siteShareKeyHandler = (e) => { if (e.key === 'Escape') closeSiteShareModal(); };
   document.addEventListener('keydown', document._siteShareKeyHandler);
+}
+
+function drawSiteShareCard() {
+  const canvas = document.getElementById('siteShareCanvas');
+  if (!canvas) return;
+  const W = 800, H = 480;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#052D57');
+  grad.addColorStop(0.6, '#0a3d6e');
+  grad.addColorStop(1, '#0d4a85');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Decorative circles
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = '#FFBD00';
+  ctx.beginPath(); ctx.arc(W - 80, -40, 200, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-40, H + 20, 160, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // Coffee cup icon (circle bg)
+  ctx.save();
+  ctx.fillStyle = '#FFBD00';
+  ctx.beginPath(); ctx.arc(80, 80, 36, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#052D57';
+  ctx.font = 'bold 32px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('CJ', 80, 80);
+  ctx.restore();
+
+  // App name
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 28px "Noto Sans JP", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Coffee Journal', 130, 72);
+
+  // Tagline
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '16px "Noto Sans JP", sans-serif';
+  ctx.fillText('Your personal coffee tasting diary', 130, 100);
+
+  // Divider
+  ctx.strokeStyle = 'rgba(255,189,0,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(48, 138);
+  ctx.lineTo(W - 48, 138);
+  ctx.stroke();
+
+  // Feature bullets
+  const features = [
+    'Record every cup with flavor notes & ratings',
+    'Track your coffee journey over time',
+    'Analyze your taste preferences with insights',
+    'Sync across devices with Google account',
+  ];
+  ctx.font = '15px "Noto Sans JP", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  features.forEach((f, i) => {
+    const y = 175 + i * 38;
+    // bullet dot
+    ctx.fillStyle = '#FFBD00';
+    ctx.beginPath(); ctx.arc(62, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(f, 80, y);
+  });
+
+  // QR code (from siteShareQR canvas)
+  const qrCanvas = document.getElementById('siteShareQR');
+  if (qrCanvas && qrCanvas.width > 0) {
+    const qrSize = 140;
+    const qrX = W - 48 - qrSize;
+    const qrY = 155;
+    // White background for QR
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 10);
+    ctx.fill();
+    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Scan to open', qrX + qrSize / 2, qrY + qrSize + 12);
+  }
+
+  // Bottom bar
+  ctx.fillStyle = 'rgba(255,189,0,0.12)';
+  ctx.fillRect(0, H - 70, W, 70);
+
+  // Instagram
+  ctx.fillStyle = '#FFBD00';
+  ctx.font = 'bold 14px "Noto Sans JP", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Made by @tsubaki_no', 60, H - 35);
+
+  // URL
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '12px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(SITE_URL, W - 48, H - 35);
+}
+
+function downloadSiteCard() {
+  const canvas = document.getElementById('siteShareCanvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = 'coffee-journal-share.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
 }
 
 function closeSiteShareModal() {
