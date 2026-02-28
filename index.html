@@ -576,8 +576,8 @@ textarea{resize:none;height:60px;line-height:1.6;}
 .entry-detail-img:hover{opacity:.85;}
 .entry-detail-bean-btn{width:100%;padding:10px;background:rgba(5,45,87,.06);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;transition:all .15s;margin-bottom:12px;text-align:left;}
 .entry-detail-bean-btn:hover{background:rgba(5,45,87,.12);border-color:var(--navy);}
-.entry-detail-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border);}
-.entry-detail-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:8px 16px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500;transition:all .15s;border:1.5px solid var(--border);background:var(--surface);color:var(--text);display:inline-flex;align-items:center;gap:6px;}
+.entry-detail-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.entry-detail-btn{font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:8px 12px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500;transition:all .15s;border:1.5px solid var(--border);background:var(--surface);color:var(--text);display:inline-flex;align-items:center;gap:5px;flex:1;justify-content:center;min-width:0;}
 .btn-icon{width:16px;height:16px;object-fit:contain;opacity:0.65;flex-shrink:0;}
 .entry-detail-btn:hover{border-color:var(--navy);color:var(--navy);}
 .entry-detail-btn.danger{color:var(--danger);border-color:rgba(217,48,37,.3);}
@@ -2730,9 +2730,13 @@ function renderArchive() {
   displayEntries.forEach(e=>{const d=(e.datetime||'').split('T')[0];(groups[d]=groups[d]||[]).push(e);});
   archList.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
     const label = formatDate(new Date(date+'T12:00:00'));
-    const items = groups[date].map(e=>`
+    const items = groups[date].map(e=>{
+      const archBullet = (e.images&&e.images.length)
+        ? `<img src="${e.images[0]}" style="width:32px;height:32px;object-fit:cover;border-radius:50%;display:block;" alt="">`
+        : `<span style="font-size:9px;font-weight:700;color:var(--navy);letter-spacing:.03em;line-height:1.2;text-align:center;">${e.temp==='iced'?'Iced':'Hot'}</span>`;
+      return `
       <div class="month-entry-row entry" onclick="openEntryDetail('${e.id}')">
-        <div class="bullet">''</div>
+        <div class="bullet">${archBullet}</div>
         <div class="entry-body" style="padding-right:48px">
           <div class="entry-top">
             <span class="entry-name">${escHTML(e.name)}</span>
@@ -2751,7 +2755,8 @@ function renderArchive() {
         <div class="entry-actions">
           <button class="icon-btn del" onclick="event.stopPropagation();deleteEntry('${e.id}').then(()=>renderArchive())" title="Delete">✕</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="date-group" data-date="${date}"><div class="date-label"><span>${label}</span></div>${items}</div>`;
   }).join('');
 }
