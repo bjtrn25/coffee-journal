@@ -2498,19 +2498,23 @@ function renderEntryCard(e) {
     <div class="bullet">${icon}</div>
     <div class="entry-body">
       <div class="entry-top">
-        <span class="entry-name">${escHTML(e.name)}</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:0;">
+          <span class="entry-name">${escHTML(e.name)}</span>
+          ${e.place?`<span class="tag" style="font-size:9px;">📍 ${escHTML(e.place)}</span>`:''}
+          ${e.rating?`<span class="entry-rating" style="font-size:12px;">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+        </div>
         <span class="entry-time">${timeStr}</span>
       </div>
-      <div class="entry-meta">
-        ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
-        <span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>
-        ${e.variety?`<span class="tag variety">${escHTML(toEn(e.variety))}</span>`:''}
-        ${e.process?`<span class="tag process">${escHTML(toEn(e.process))}</span>`:''}
-        ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>`:''}
-        ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+      <div style="margin-top:4px;display:flex;flex-direction:column;gap:3px;">
+        <div><span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span></div>
+        ${e.process?`<div><span class="tag process">${escHTML(toEn(e.process))}</span></div>`:''}
+        ${e.roastLevel?`<div><span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span></div>`:''}
+        ${e.variety?`<div><span class="tag variety">${escHTML(toEn(e.variety))}</span></div>`:''}
+        ${flavors.length?`<div class="entry-meta" style="margin-bottom:0;">${flavors.map(f=>`<span class="tag flavor">${escHTML(toEn(f))}</span>`).join('')}</div>`:''}
       </div>
-      ${flavors.length?`<div class="entry-meta">${flavors.map(f=>`<span class="tag flavor">${escHTML(toEn(f))}</span>`).join('')}</div>`:''}
-        ${roastDays!==null?`<div class="entry-detail">Roasted: <span>${e.roastDate} (${roastDays}d ago)</span></div>`:''}      ${e.altitude?`<div class="entry-detail">Altitude: <span>${e.altitude} m</span></div>`:''}      ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
+      ${roastDays!==null?`<div class="entry-detail" style="margin-top:4px;">Roasted: <span>${e.roastDate} (${roastDays}d ago)</span></div>`:''}
+      ${e.altitude?`<div class="entry-detail">Altitude: <span>${e.altitude} m</span></div>`:''}
+      ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
       ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
     </div>
     <div class="entry-actions">
