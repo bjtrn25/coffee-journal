@@ -1867,7 +1867,7 @@ function drawShareCard(e) {
     const rd = new Date(e.roastDate + 'T12:00:00');
     const rdStr = `Roasted ${rd.getFullYear()}/${String(rd.getMonth()+1).padStart(2,'0')}/${String(rd.getDate()).padStart(2,'0')}`;
     const roastDaysCard = Math.floor((new Date() - rd) / 86400000);
-    tags.push({ text: rdStr + `（${roastDaysCard}d ago)`, color: 'rgba(255,200,100,0.18)', textColor: '#ffd580' });
+    tags.push({ text: rdStr + ` (${roastDaysCard}d ago)`, color: 'rgba(255,200,100,0.18)', textColor: '#ffd580' });
   }
 
   let tagX = 48;
@@ -2553,7 +2553,7 @@ function openEntryDetail(id) {
   const roastWrap = document.getElementById('ed-roast-wrap');
   if (roastDays !== null) {
     roastWrap.style.display = 'block';
-    document.getElementById('ed-roast').innerHTML = `Roast Date: <span>${e.roastDate}（${roastDays}d ago)</span>`;
+    document.getElementById('ed-roast').innerHTML = `Roast Date: <span>${e.roastDate} (${roastDays}d ago)</span>`;
   } else { roastWrap.style.display = 'none'; }
   // Altitude
   const altWrap = document.getElementById('ed-altitude-wrap');
@@ -2834,7 +2834,7 @@ function openBeanDetail(id) {
     { key: 'Region / Farm', val: b.region },
     { key: 'Altitude', val: b.altitude ? b.altitude+' m' : null },
     { key: 'Roaster', val: b.roaster },
-    { key: 'Roast Date', val: roastDays !== null ? `${b.roastDate}（${roastDays}d ago)` : b.roastDate || null },
+    { key: 'Roast Date', val: roastDays !== null ? `${b.roastDate} (${roastDays}d ago)` : b.roastDate || null },
   ].filter(x => x.val);
   document.getElementById('bd-info').innerHTML = infoItems.map(x =>
     `<div class="bean-detail-info-item"><span class="bean-detail-info-key">${x.key}</span><span class="bean-detail-info-val">${escHTML(x.val)}</span></div>`
