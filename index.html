@@ -2539,11 +2539,11 @@ function renderEntryCard(e) {
   <div class="entry ${e.temp==='iced'?'entry-iced':'entry-hot'}" id="entry-${e.id}">
     <div class="bullet">${icon}</div>
     <div class="entry-body">
-      <div class="entry-top">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:0;">
+      <div class="entry-top" style="flex-wrap:nowrap;align-items:flex-start;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;">
           <span class="entry-name">${escHTML(e.name)}</span>
-          ${e.place?`<span class="tag" style="font-size:9px;">📍 ${escHTML(e.place)}</span>`:''}
-          ${e.rating?`<span class="entry-rating" style="font-size:12px;">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+          ${e.place?`<span class="tag" style="font-size:9px;white-space:nowrap;">📍 ${escHTML(e.place)}</span>`:''}
+          ${e.rating?`<span class="entry-rating" style="font-size:12px;white-space:nowrap;">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
         </div>
       </div>
       <div style="margin-top:4px;display:flex;flex-direction:column;gap:3px;">
