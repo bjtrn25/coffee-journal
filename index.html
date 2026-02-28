@@ -1195,6 +1195,64 @@ const FLAVORS = {
 };
 
 // ══════════════════════════════
+//  JP→EN TRANSLATION MAP (for legacy data stored in Japanese)
+// ══════════════════════════════
+const JP_TO_EN = {
+  // Variety
+  'ティピカ': 'Typica', 'ゲイシャ': 'Geisha', 'ブルボン': 'Bourbon', 'カトゥーラ': 'Caturra',
+  'カトゥアイ': 'Catuai', 'パカマラ': 'Pacamara', 'SL28': 'SL28', 'SL34': 'SL34',
+  'ムンドノーボ': 'Mundo Novo', 'マラゴジペ': 'Maragogipe',
+  'ジャバ': 'Java', 'ケント': 'Kent', 'ロウリナ': 'Laurina',
+  'ビラサルチ': 'Villa Sarchi', 'ヘイルルーム (ハラール)': 'Heirloom (Harar)',
+  'ジンマ': 'Jimma', 'コロンビア': 'Colombia', 'クリオーリョ': 'Criollo',
+  'その他': 'Other',
+  // Process
+  'ウォッシュド': 'Washed', 'ナチュラル': 'Natural',
+  'ハニー / パルプドナチュラル': 'Honey / Pulped Natural',
+  'ハニー/パルプドナチュラル': 'Honey / Pulped Natural',
+  'アナエロビック': 'Anaerobic', 'ウェットハルド': 'Wet-Hulled',
+  // Roast Level
+  'ライト': 'Light', 'シナモン': 'Cinnamon', 'ミディアム': 'Medium',
+  'ハイ': 'High', 'シティ': 'City', 'フルシティ': 'Full City',
+  'フレンチ': 'French', 'イタリアン': 'Italian',
+  // Flavors - Fruits
+  'ブルーベリー': 'Blueberry', 'ストロベリー': 'Strawberry',
+  'ラズベリー': 'Raspberry', 'チェリー': 'Cherry',
+  'プラム': 'Plum', 'ピーチ': 'Peach', 'アプリコット': 'Apricot',
+  'マンゴー': 'Mango', 'パパイヤ': 'Papaya', 'パイナップル': 'Pineapple',
+  'シトラス': 'Citrus', 'レモン': 'Lemon', 'オレンジ': 'Orange',
+  'グレープフルーツ': 'Grapefruit', 'ライム': 'Lime',
+  // Flavors - Nuts / Choco
+  'アーモンド': 'Almond', 'ヘーゼルナッツ': 'Hazelnut',
+  'クルミ': 'Walnut', 'ダークチョコレート': 'Dark Chocolate',
+  'ミルクチョコレート': 'Milk Chocolate', 'カカオニブ': 'Cacao Nib',
+  'キャラメル': 'Caramel', 'トフィー': 'Toffee', 'バター': 'Butter',
+  // Flavors - Sweet / Dessert
+  'ブラウンシュガー': 'Brown Sugar', 'ハニー': 'Honey',
+  'メープルシロップ': 'Maple Syrup', 'バニラ': 'Vanilla',
+  'クリーミー': 'Creamy', 'マルジパン': 'Marzipan',
+  'ケインシュガー': 'Cane Sugar',
+  // Flavors - Floral / Herbal
+  'ジャスミン': 'Jasmine', 'ラベンダー': 'Lavender',
+  'ローズ': 'Rose', 'エルダーフラワー': 'Elderflower',
+  'カモミール': 'Chamomile', 'ハーブ': 'Herb', '紅茶': 'Black Tea',
+  // Flavors - Spice
+  'シナモンスパイス': 'Cinnamon', 'クローブ': 'Clove',
+  'カルダモン': 'Cardamom', 'ブラックペッパー': 'Black Pepper',
+  'ナツメグ': 'Nutmeg',
+  // Flavors - Other
+  'アースシー': 'Earthy', 'ウッディ': 'Woody',
+  'スモーキー': 'Smoky', 'ワイニー': 'Winey',
+  'ファーメンテッド': 'Fermented', 'グレイン': 'Grain',
+};
+
+// Helper: translate a stored value to English
+function toEn(val) {
+  if (!val) return val;
+  return JP_TO_EN[val] || val;
+}
+
+// ══════════════════════════════
 //  STATE
 // ══════════════════════════════
 let sb = null;           // Supabase client
@@ -1734,7 +1792,8 @@ const ROAST_THEMES = {
 };
 
 function getRoastTheme(roastLevel) {
-  return ROAST_THEMES[roastLevel] || { bg: ['#052D57','#0a3d6e','#0d4a85'], accent: '#FFBD00', circle: '#FFBD00' };
+  const key = toEn(roastLevel);
+  return ROAST_THEMES[key] || { bg: ['#052D57','#0a3d6e','#0d4a85'], accent: '#FFBD00', circle: '#FFBD00' };
 }
 
 function drawShareCard(e) {
@@ -1809,7 +1868,8 @@ function drawShareCard(e) {
 
   // --- 焙煎度バッジ（焙煎度があれば表示） ---
   if (e.roastLevel) {
-    const rw = ctx.measureText(e.roastLevel).width + 24;
+    const roastLabelEn = toEn(e.roastLevel);
+    const rw = ctx.measureText(roastLabelEn).width + 24;
     ctx.fillStyle = `${theme.accent}33`;
     ctx.beginPath();
     roundRect(ctx, W - 48 - rw, 32, rw, 22, 11);
@@ -1818,7 +1878,7 @@ function drawShareCard(e) {
     ctx.font = 'bold 11px "Noto Sans JP", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(e.roastLevel, W - 48 - rw / 2, 43);
+    ctx.fillText(roastLabelEn, W - 48 - rw / 2, 43);
   }
 
   // --- 温度バッジ ---
@@ -1873,8 +1933,8 @@ function drawShareCard(e) {
 
   // --- タグ群（品種・プロセス・Altitude・Roast Date—焙煎度は右上に移動したので除外） ---
   const tags = [];
-  if (e.variety) tags.push({ text: e.variety, color: 'rgba(180,140,255,0.25)', textColor: '#c8a8ff' });
-  if (e.process) tags.push({ text: e.process, color: 'rgba(100,180,255,0.2)', textColor: '#82c8ff' });
+  if (e.variety) tags.push({ text: toEn(e.variety), color: 'rgba(180,140,255,0.25)', textColor: '#c8a8ff' });
+  if (e.process) tags.push({ text: toEn(e.process), color: 'rgba(100,180,255,0.2)', textColor: '#82c8ff' });
   if (e.altitude) tags.push({ text: e.altitude + ' m', color: 'rgba(100,220,150,0.18)', textColor: '#80e0a0' });
   if (e.roastDate) {
     const rd = new Date(e.roastDate + 'T12:00:00');
@@ -1914,7 +1974,8 @@ function drawShareCard(e) {
     let fx = 48;
     ctx.font = '400 12px "Noto Sans JP", sans-serif';
     flavors.forEach(f => {
-      const fw = ctx.measureText(f).width;
+      const fEn = toEn(f);
+      const fw = ctx.measureText(fEn).width;
       const fp = fw + 18;
       if (fx + fp > W - 48) return;
       ctx.fillStyle = 'rgba(26,122,74,0.3)';
@@ -1924,7 +1985,7 @@ function drawShareCard(e) {
       ctx.fillStyle = '#80e0b0';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(f, fx + fp / 2, metaY + 11);
+      ctx.fillText(fEn, fx + fp / 2, metaY + 11);
       fx += fp + 6;
     });
     metaY += 34;
@@ -2295,13 +2356,13 @@ function renderEntryCard(e) {
       </div>
       <div class="entry-meta">
         <span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>
-        ${e.variety?`<span class="tag variety">${escHTML(e.variety)}</span>`:''}
+        ${e.variety?`<span class="tag variety">${escHTML(toEn(e.variety))}</span>`:''}
         ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
-        ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
-        ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(e.roastLevel)}">${escHTML(e.roastLevel)}</span>`:''}
+        ${e.process?`<span class="tag process">${escHTML(toEn(e.process))}</span>`:''}
+        ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>`:''}
         ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
       </div>
-      ${flavors.length?`<div class="entry-meta">${flavors.map(f=>`<span class="tag flavor">${escHTML(f)}</span>`).join('')}</div>`:''}
+      ${flavors.length?`<div class="entry-meta">${flavors.map(f=>`<span class="tag flavor">${escHTML(toEn(f))}</span>`).join('')}</div>`:''}
         ${roastDays!==null?`<div class="entry-detail">Roasted: <span>${e.roastDate} (${roastDays}d ago)</span></div>`:''}      ${e.altitude?`<div class="entry-detail">Altitude: <span>${e.altitude} m</span></div>`:''}      ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
       ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
     </div>
@@ -2498,7 +2559,7 @@ function renderArchive() {
   if (archiveFilter === 'hot') displayEntries = mEntries.filter(e=>e.temp==='hot');
   else if (archiveFilter === 'iced') displayEntries = mEntries.filter(e=>e.temp==='iced');
   const flavorCount = {};
-  mEntries.forEach(e=>(e.flavors||[]).forEach(f=>{ flavorCount[f]=(flavorCount[f]||0)+1; }));
+  mEntries.forEach(e=>(e.flavors||[]).forEach(f=>{ const k=toEn(f); flavorCount[k]=(flavorCount[k]||0)+1; }));
   const topFlavors = Object.entries(flavorCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const flavorBar = document.getElementById('monthFlavorBar');
   if (topFlavors.length>0) {
@@ -2531,13 +2592,13 @@ function renderArchive() {
             <span class="entry-time">${e.datetime?formatTime(new Date(e.datetime)):''}</span>
           </div>
           <div class="entry-meta">
-            ${e.variety?`<span class="tag variety">${escHTML(e.variety)}</span>`:''}
+            ${e.variety?`<span class="tag variety">${escHTML(toEn(e.variety))}</span>`:''}
             ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
-            ${e.process?`<span class="tag process">${escHTML(e.process)}</span>`:''}
-            ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(e.roastLevel)}">${escHTML(e.roastLevel)}</span>`:''}
+            ${e.process?`<span class="tag process">${escHTML(toEn(e.process))}</span>`:''}
+            ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>`:''}
             ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
           </div>
-          ${(e.flavors||[]).length?`<div class="entry-meta">${e.flavors.slice(0,4).map(f=>`<span class="tag flavor">${escHTML(f)}</span>`).join('')}${e.flavors.length>4?`<span class="tag flavor">+${e.flavors.length-4}</span>`:''}</div>`:''}
+          ${(e.flavors||[]).length?`<div class="entry-meta">${e.flavors.slice(0,4).map(f=>`<span class="tag flavor">${escHTML(toEn(f))}</span>`).join('')}${e.flavors.length>4?`<span class="tag flavor">+${e.flavors.length-4}</span>`:''}</div>`:''}
           ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
         </div>
         <div class="entry-actions">
@@ -2561,17 +2622,17 @@ function openEntryDetail(id) {
   document.getElementById('ed-time').textContent = timeStr;
   // タグ
   document.getElementById('ed-tags').innerHTML = [`<span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>`,
-    e.variety ? `<span class="tag variety">${escHTML(e.variety)}</span>` : '',
+    e.variety ? `<span class="tag variety">${escHTML(toEn(e.variety))}</span>` : '',
     e.place ? `<span class="tag">📍 ${escHTML(e.place)}</span>` : '',
-    e.process ? `<span class="tag process">${escHTML(e.process)}</span>` : '',
-    e.roastLevel ? `<span class="tag roast-tag" data-roast="${escHTML(e.roastLevel)}">${escHTML(e.roastLevel)}</span>` : '',
+    e.process ? `<span class="tag process">${escHTML(toEn(e.process))}</span>` : '',
+    e.roastLevel ? `<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>` : '',
     e.rating ? `<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>` : '',
   ].join('');
   // フレーバー
   const flavWrap = document.getElementById('ed-flavors-wrap');
   if (flavors.length) {
     flavWrap.style.display = 'block';
-    document.getElementById('ed-flavors').innerHTML = flavors.map(f=>`<span class="tag flavor">${escHTML(f)}</span>`).join('');
+    document.getElementById('ed-flavors').innerHTML = flavors.map(f=>`<span class="tag flavor">${escHTML(toEn(f))}</span>`).join('');
   } else { flavWrap.style.display = 'none'; }
   // Roast Date
   const roastWrap = document.getElementById('ed-roast-wrap');
@@ -2714,7 +2775,7 @@ function renderInsights() {
 
   // フレーバー Top 10
   const flavorMap = {};
-  entries.forEach(e => (e.flavors||[]).forEach(f => { flavorMap[f] = (flavorMap[f]||0) + 1; }));
+  entries.forEach(e => (e.flavors||[]).forEach(f => { const k = toEn(f); flavorMap[k] = (flavorMap[k]||0) + 1; }));
   const flavorData = Object.entries(flavorMap).sort((a,b) => b[1]-a[1]).slice(0,10);
   renderBars('ins-flavors', flavorData, () => 'var(--navy)');
 
@@ -2726,7 +2787,7 @@ function renderInsights() {
     'French':'#3D1A0E','Italian':'#1E0A05'
   };
   const roastMap = {};
-  entries.forEach(e => { if (e.roastLevel) roastMap[e.roastLevel] = (roastMap[e.roastLevel]||0) + 1; });
+  entries.forEach(e => { if (e.roastLevel) { const k = toEn(e.roastLevel); roastMap[k] = (roastMap[k]||0) + 1; } });
   const roastData = roastOrder.filter(r => roastMap[r]).map(r => [r, roastMap[r]]);
   const otherRoast = Object.entries(roastMap).filter(([r]) => !roastOrder.includes(r)).sort((a,b) => b[1]-a[1]);
   renderBars('ins-roasts', [...roastData, ...otherRoast], label => roastColors[label] || 'var(--navy)');
