@@ -2418,7 +2418,7 @@ function renderJournal() {
 }
 
 function renderEntryCard(e) {
-  const icon = e.temp==='iced'?'ICED':'HOT';
+  const icon = `<span style="font-size:9px;font-weight:700;color:var(--navy);letter-spacing:.03em;line-height:1.2;text-align:center;">${e.temp==='iced'?'Iced':'Hot'}</span>`;
   const timeStr = e.datetime ? formatTime(new Date(e.datetime)) : '';
   const roastDays = e.roastDate ? Math.floor((new Date()-new Date(e.roastDate+'T12:00:00'))/86400000) : null;
   const flavors = e.flavors||[];
