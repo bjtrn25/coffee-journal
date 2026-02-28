@@ -1449,7 +1449,7 @@ async function loadAll() {
       place: r.place || '', datetime: r.drunk_at,
       process: r.process || '', roastLevel: r.roast_level || '',
       roastDate: r.roast_date || '', variety: r.variety || '',
-      altitude: r.altitude || '', flavors: [...new Set(r.flavors || [])],
+      altitude: r.altitude || '', flavors: [...new Set((r.flavors || []).map(f => toEn(f)))],
       images: r.images || [], note: r.note || '',
       rating: r.rating || 0, beanId: r.bean_id || ''
     }));
@@ -1486,7 +1486,7 @@ async function addEntry() {
     roast_date: document.getElementById('f-roast-date').value || null,
     variety: document.getElementById('f-variety').value,
     altitude: document.getElementById('f-altitude').value || null,
-    flavors: [...new Set(selectedFlavors)],
+    flavors: [...new Set([...selectedFlavors].map(f => toEn(f)))],
     images: pendingImages.map(i => i.dataUrl),
     note: document.getElementById('f-note').value.trim(),
     rating,
@@ -1500,7 +1500,7 @@ async function addEntry() {
     place: data.place || '', datetime: data.drunk_at,
     process: data.process || '', roastLevel: data.roast_level || '',
     roastDate: data.roast_date || '', variety: data.variety || '',
-    altitude: data.altitude || '', flavors: [...new Set(data.flavors || [])],
+    altitude: data.altitude || '', flavors: [...new Set((data.flavors || []).map(f => toEn(f)))],
     images: data.images || [], note: data.note || '',
     rating: data.rating || 0, beanId: data.bean_id || ''
   });
@@ -1541,7 +1541,7 @@ async function saveEdit(id) {
     roast_date: document.getElementById('ee-rd-'+id).value || null,
     variety: document.getElementById('ee-variety-'+id).value.trim(),
     note: document.getElementById('ee-note-'+id).value.trim(),
-    flavors: [...new Set(window._editFlavors || new Set())],
+    flavors: [...new Set([...(window._editFlavors || new Set())].map(f => toEn(f)))],
     images: newImages,
     rating: nr || e.rating
   };
@@ -2961,7 +2961,7 @@ async function saveEditInModal() {
     roast_date: document.getElementById('ed-ee-rd').value || null,
     variety: document.getElementById('ed-ee-variety').value,
     note: document.getElementById('ed-ee-note').value.trim(),
-    flavors: [...new Set(_modalEditFlavors || new Set())],
+    flavors: [...new Set([...(_modalEditFlavors || new Set())].map(f => toEn(f)))],
     images: e.images || [],
     rating: nr || e.rating
   };
