@@ -2536,7 +2536,7 @@ function openEntryDetail(id) {
   const timeStr = e.datetime ? formatDate(new Date(e.datetime.split('T')[0]+'T12:00:00')) + ' ' + formatTime(new Date(e.datetime)) : '';
   document.getElementById('ed-time').textContent = timeStr;
   // タグ
-  document.getElementById('ed-tags').innerHTML =        <span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>`,
+  document.getElementById('ed-tags').innerHTML = [`<span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>`,
     e.variety ? `<span class="tag variety">${escHTML(e.variety)}</span>` : '',
     e.place ? `<span class="tag">📍 ${escHTML(e.place)}</span>` : '',
     e.process ? `<span class="tag process">${escHTML(e.process)}</span>` : '',
