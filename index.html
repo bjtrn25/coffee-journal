@@ -950,11 +950,52 @@ textarea{resize:none;height:60px;line-height:1.6;}
     <div id="ed-bean-wrap" style="display:none;">
       <button class="entry-detail-bean-btn" id="ed-bean-btn"></button>
     </div>
-    <div class="entry-detail-actions">
+    <div class="entry-detail-actions" id="ed-view-actions">
       <button class="entry-detail-btn" id="ed-share-btn"><img src="icons/share.png" class="btn-icon" alt="">Share</button>
       <button class="entry-detail-btn" id="ed-edit-btn"><img src="icons/edit.png" class="btn-icon" alt="">Edit</button>
       <button class="entry-detail-btn danger" id="ed-del-btn"><img src="icons/delete.png" class="btn-icon" alt="">Delete</button>
       <button class="entry-detail-btn" onclick="closeEntryDetail()"><img src="icons/close.png" class="btn-icon" alt="">Close</button>
+    </div>
+    <!-- インライン編集フォーム -->
+    <div id="ed-edit-form" style="display:none;">
+      <div class="edit-form" style="margin-top:0;">
+        <div class="form-row">
+          <div class="form-group"><label>Coffee Name</label><input type="text" id="ed-ee-name"></div>
+          <div class="form-group"><label>Temperature</label>
+            <div class="toggle-row">
+              <button type="button" class="toggle-btn" id="ed-ee-hot" onclick="this.classList.add('active');document.getElementById('ed-ee-iced').classList.remove('active')">Hot</button>
+              <button type="button" class="toggle-btn" id="ed-ee-iced" onclick="this.classList.add('active');document.getElementById('ed-ee-hot').classList.remove('active')">Iced</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Date &amp; Time</label><input type="datetime-local" id="ed-ee-dt"></div>
+          <div class="form-group"><label>Place</label><input type="text" id="ed-ee-place"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Variety</label>
+            <select id="ed-ee-variety"><option value="">—</option><option>Geisha</option><option>Bourbon</option><option>Typica</option><option>Caturra</option><option>Catuai</option><option>Pacamara</option><option>SL28</option><option>SL34</option><option>Mundo Novo</option><option>Maragogipe</option><option>Java</option><option>Kent</option><option>S795</option><option>Laurina</option><option>Villa Sarchi</option><option>Heirloom (Harar)</option><option>Jimma</option><option>74110</option><option>74112</option><option>Ruiru 11</option><option>Batian</option><option>Colombia</option><option>Criollo</option><option>Other</option></select>
+          </div>
+          <div class="form-group"><label>Process</label>
+            <select id="ed-ee-process"><option value="">—</option><option>Washed</option><option>Natural</option><option>Honey / Pulped Natural</option><option>Anaerobic</option><option>Wet-Hulled</option><option>Other</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Roast Level</label>
+            <select id="ed-ee-rl"><option value="">—</option><option>Light</option><option>Cinnamon</option><option>Medium</option><option>High</option><option>City</option><option>Full City</option><option>French</option><option>Italian</option></select>
+          </div>
+          <div class="form-group"><label>Roast Date</label><input type="date" id="ed-ee-rd"></div>
+        </div>
+        <div style="margin-bottom:12px"><label style="display:block;margin-bottom:8px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);">Flavor Notes</label><div id="ed-ef"></div></div>
+        <div class="form-group" style="margin-bottom:11px"><label>Rating</label>
+          <div class="stars-row" id="ed-ee-stars"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px"><label>Notes</label><textarea id="ed-ee-note"></textarea></div>
+        <div class="form-actions">
+          <button class="add-btn" id="ed-ee-save-btn">Save</button>
+          <button class="cancel-btn" onclick="closeEditInModal()">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1517,6 +1558,7 @@ async function saveEdit(id) {
   setStatus('ok', 'Synced');
   editingId = null; window._editFlavors = null; window._editImages = null;
   renderJournal();
+  renderArchive();
 }
 
 // ══════════════════════════════
@@ -2459,7 +2501,7 @@ function renderEntryCard(e) {
           </div>
           <div class="form-row">
             <div class="form-group"><label>Variety</label>
-              <select id="ee-variety-${e.id}"><option value="">—</option><option>Geisha</option><option>Bourbon</option><option>Typica</option><option>Caturra</option><option>Catuai</option><option>Pacamara</option><option>SL28</option><option>SL34</option><option>Mundo Novo</option><option>Maragogipe</option><option>Java</option><option>Kent</option><option>S795</option><option>Laurina</option><option>Villa Sarchi</option><option>Heirloom (Harar)</option><option>Jimma</option><option>74110</option><option>74112</option><option>Ruiru 11</option><option>Batian</option><option>Colombia</option><option>Criollo</option><option>Other</option></select>
+              <select id="ee-variety-${e.id}"><option value="">—</option>${['Geisha','Bourbon','Typica','Caturra','Catuai','Pacamara','SL28','SL34','Mundo Novo','Maragogipe','Java','Kent','S795','Laurina','Villa Sarchi','Heirloom (Harar)','Jimma','74110','74112','Ruiru 11','Batian','Colombia','Criollo','Other'].map(v=>`<option ${(e.variety||'')==v?'selected':''}>${v}</option>`).join('')}</select>
             </div>
             <div class="form-group"><label>Process</label>
               <select id="ee-process-${e.id}"><option value="">—</option>${pOpts.map(p=>`<option ${e.process===p?'selected':''}>${p}</option>`).join('')}</select>
@@ -2824,7 +2866,7 @@ function openEntryDetail(id) {
   } else { beanWrap.style.display = 'none'; }
   // ボタン
   document.getElementById('ed-share-btn').onclick = () => { closeEntryDetail(); openShareModal(id); };
-  document.getElementById('ed-edit-btn').onclick = () => { closeEntryDetail(); showPage('journal'); setTimeout(()=>startEdit(id),100); };
+  document.getElementById('ed-edit-btn').onclick = () => { openEditInModal(id); };
   document.getElementById('ed-del-btn').onclick = () => { closeEntryDetail(); deleteEntry(id).then(()=>renderArchive()); };
   // 表示
   document.getElementById('entryDetailModal').classList.remove('hidden');
@@ -2832,6 +2874,112 @@ function openEntryDetail(id) {
 
 function closeEntryDetail() {
   document.getElementById('entryDetailModal').classList.add('hidden');
+  closeEditInModal();
+}
+
+let _modalEditId = null;
+let _modalEditFlavors = null;
+
+function openEditInModal(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  _modalEditId = id;
+  _modalEditFlavors = new Set(e.flavors || []);
+  // フォームに値をセット
+  document.getElementById('ed-ee-name').value = e.name || '';
+  if (e.temp === 'iced') {
+    document.getElementById('ed-ee-hot').classList.remove('active');
+    document.getElementById('ed-ee-iced').classList.add('active');
+  } else {
+    document.getElementById('ed-ee-hot').classList.add('active');
+    document.getElementById('ed-ee-iced').classList.remove('active');
+  }
+  const dtLocal = e.datetime ? (()=>{const d=new Date(e.datetime);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);})() : '';
+  document.getElementById('ed-ee-dt').value = dtLocal;
+  document.getElementById('ed-ee-place').value = e.place || '';
+  document.getElementById('ed-ee-variety').value = e.variety || '';
+  document.getElementById('ed-ee-process').value = e.process || '';
+  document.getElementById('ed-ee-rl').value = e.roastLevel || '';
+  document.getElementById('ed-ee-rd').value = e.roastDate || '';
+  document.getElementById('ed-ee-note').value = e.note || '';
+  // 評価
+  const starsEl = document.getElementById('ed-ee-stars');
+  starsEl.innerHTML = [1,2,3,4,5].map(v=>`<span class="star ${(e.rating||0)>=v?'active':''}" data-sv="${v}">★</span>`).join('');
+  starsEl.querySelectorAll('.star').forEach(s => {
+    s.addEventListener('click', () => {
+      const v = +s.dataset.sv;
+      starsEl.querySelectorAll('.star').forEach((st,i) => st.classList.toggle('active', i < v));
+    });
+  });
+  // フレーバー
+  const efEl = document.getElementById('ed-ef');
+  efEl.innerHTML = Object.entries(FLAVORS).map(([cat,items])=>`
+    <div class="flavor-cat-label">${cat}</div>
+    <div class="flavor-chips">${items.map(f=>`<button type="button" class="flavor-chip${_modalEditFlavors.has(f)?' selected':''}" data-f="${escAttr(f)}">${escHTML(f)}</button>`).join('')}</div>
+  `).join('');
+  efEl.querySelectorAll('.flavor-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.f;
+      _modalEditFlavors.has(f) ? _modalEditFlavors.delete(f) : _modalEditFlavors.add(f);
+      btn.classList.toggle('selected', _modalEditFlavors.has(f));
+    });
+  });
+  // Saveボタン
+  document.getElementById('ed-ee-save-btn').onclick = () => saveEditInModal();
+  // 表示切替
+  document.getElementById('ed-view-actions').style.display = 'none';
+  document.getElementById('ed-edit-form').style.display = 'block';
+}
+
+function closeEditInModal() {
+  _modalEditId = null;
+  _modalEditFlavors = null;
+  const va = document.getElementById('ed-view-actions');
+  const ef = document.getElementById('ed-edit-form');
+  if (va) va.style.display = '';
+  if (ef) ef.style.display = 'none';
+}
+
+async function saveEditInModal() {
+  if (!_modalEditId) return;
+  const id = _modalEditId;
+  const idx = entries.findIndex(e => e.id === id);
+  if (idx < 0) return;
+  const e = entries[idx];
+  const hotBtn = document.getElementById('ed-ee-hot');
+  const temp = hotBtn && hotBtn.classList.contains('active') ? 'hot' : 'iced';
+  const starsEl = document.getElementById('ed-ee-stars');
+  let nr = 0;
+  starsEl.querySelectorAll('.star').forEach((s,i) => { if (s.classList.contains('active')) nr = i+1; });
+  const row = {
+    name: document.getElementById('ed-ee-name').value.trim() || e.name,
+    temp,
+    place: document.getElementById('ed-ee-place').value.trim(),
+    drunk_at: (() => { const v = document.getElementById('ed-ee-dt').value; return v ? new Date(v).toISOString() : e.datetime; })(),
+    process: document.getElementById('ed-ee-process').value,
+    roast_level: document.getElementById('ed-ee-rl').value,
+    roast_date: document.getElementById('ed-ee-rd').value || null,
+    variety: document.getElementById('ed-ee-variety').value,
+    note: document.getElementById('ed-ee-note').value.trim(),
+    flavors: [...(_modalEditFlavors || new Set())],
+    images: e.images || [],
+    rating: nr || e.rating
+  };
+  setStatus('syncing', 'Updating...');
+  const { error } = await sb.from('coffee_entries').update(row).eq('id', id);
+  if (error) { console.error(error); setStatus('error', 'Update Error'); return; }
+  Object.assign(e, {
+    name: row.name, temp: row.temp, place: row.place,
+    datetime: row.drunk_at, process: row.process,
+    roastLevel: row.roast_level, roastDate: row.roast_date || '',
+    variety: row.variety, note: row.note,
+    flavors: row.flavors, images: row.images, rating: row.rating
+  });
+  setStatus('ok', 'Synced');
+  closeEditInModal();
+  closeEntryDetail();
+  renderJournal();
+  renderArchive();
 }
 
 function goToEntry(id) {
