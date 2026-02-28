@@ -588,7 +588,7 @@ textarea{resize:none;height:60px;line-height:1.6;}
     </div>
     <!-- 標高 + プロセス -->
     <div class="form-row">
-      <div class="form-group"><label>標高 (masl)</label><input type="number" id="bm-altitude" placeholder="例: 1900"></div>
+      <div class="form-group"><label>標高 (m)</label><input type="text" id="bm-altitude" placeholder="例: 1900"></div>
       <div class="form-group"><label>プロセス</label>
         <select id="bm-process">
           <option value="">— Unselected —</option>
@@ -842,7 +842,7 @@ textarea{resize:none;height:60px;line-height:1.6;}
       <div class="form-group"><label>焙煎日</label><input type="date" id="f-roast-date"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>標高 (masl)</label><input type="number" id="f-altitude" placeholder="例: 1900"></div>
+      <div class="form-group"><label>標高 (m)</label><input type="text" id="f-altitude" placeholder="例: 1900"></div>
       <div class="form-group"><!-- spacer --></div>
     </div>
     <div style="margin-bottom:14px;">
@@ -1119,7 +1119,7 @@ async function addEntry() {
     roast_level: document.getElementById('f-roast-level').value,
     roast_date: document.getElementById('f-roast-date').value || null,
     variety: document.getElementById('f-variety').value,
-    altitude: document.getElementById('f-altitude').value ? Number(document.getElementById('f-altitude').value) : null,
+    altitude: document.getElementById('f-altitude').value || null,
     flavors: [...selectedFlavors],
     images: pendingImages.map(i => i.dataUrl),
     note: document.getElementById('f-note').value.trim(),
@@ -1232,7 +1232,7 @@ async function saveBean() {
     variety: document.getElementById('bm-variety').value,
     country: document.getElementById('bm-country').value,
     region: document.getElementById('bm-region').value.trim(),
-    altitude: document.getElementById('bm-altitude').value ? Number(document.getElementById('bm-altitude').value) : null,
+    altitude: document.getElementById('bm-altitude').value || null,
     process: document.getElementById('bm-process').value,
     roast_level: document.getElementById('bm-roast').value,
     roast_date: document.getElementById('bm-roastdate').value || null,
@@ -1621,7 +1621,7 @@ function drawShareCard(e) {
   const tags = [];
   if (e.variety) tags.push({ text: e.variety, color: 'rgba(180,140,255,0.25)', textColor: '#c8a8ff' });
   if (e.process) tags.push({ text: e.process, color: 'rgba(100,180,255,0.2)', textColor: '#82c8ff' });
-  if (e.altitude) tags.push({ text: e.altitude + ' masl', color: 'rgba(100,220,150,0.18)', textColor: '#80e0a0' });
+  if (e.altitude) tags.push({ text: e.altitude + ' m', color: 'rgba(100,220,150,0.18)', textColor: '#80e0a0' });
   if (e.roastDate) {
     const rd = new Date(e.roastDate + 'T12:00:00');
     const rdStr = `焙煎 ${rd.getFullYear()}/${String(rd.getMonth()+1).padStart(2,'0')}/${String(rd.getDate()).padStart(2,'0')}`;
@@ -1977,7 +1977,7 @@ function renderEntryCard(e) {
       </div>
       ${flavors.length?`<div class="entry-meta">${flavors.map(f=>`<span class="tag flavor">🍃 ${escHTML(f)}</span>`).join('')}</div>`:''}
       ${roastDays!==null?`<div class="entry-detail">焙煎: <span>${e.roastDate}（${roastDays}日前）</span></div>`:''}
-      ${e.altitude?`<div class="entry-detail">標高: <span>${e.altitude} masl</span></div>`:''}
+      ${e.altitude?`<div class="entry-detail">標高: <span>${e.altitude} m</span></div>`:''}
       ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
       ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
     </div>
@@ -2260,7 +2260,7 @@ function openEntryDetail(id) {
   const altWrap = document.getElementById('ed-altitude-wrap');
   if (e.altitude) {
     altWrap.style.display = 'block';
-    document.getElementById('ed-altitude').innerHTML = `標高: <span>${escHTML(e.altitude)} masl</span>`;
+    document.getElementById('ed-altitude').innerHTML = `標高: <span>${escHTML(e.altitude)} m</span>`;
   } else { altWrap.style.display = 'none'; }
   // メモ
   const noteWrap = document.getElementById('ed-note-wrap');
@@ -2330,7 +2330,7 @@ function renderBeans() {
         ${b.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(b.roastLevel)}">${escHTML(b.roastLevel)}</span>`:''}
       </div>
       ${b.region?`<div class="entry-detail" style="margin-bottom:4px">地域: <span>${escHTML(b.region)}</span></div>`:''}
-      ${b.altitude?`<div class="entry-detail" style="margin-bottom:4px">標高: <span>${escHTML(b.altitude)} masl</span></div>`:''}
+      ${b.altitude?`<div class="entry-detail" style="margin-bottom:4px">標高: <span>${escHTML(b.altitude)} m</span></div>`:''}
       ${b.roaster?`<div class="entry-detail" style="margin-bottom:4px">ロースター: <span>${escHTML(b.roaster)}</span></div>`:''}
       ${roastDays!==null?`<div class="entry-detail" style="margin-bottom:4px">焙煎: <span>${b.roastDate}（${roastDays}日前）</span></div>`:''}
       ${b.note?`<div class="bean-card-note">${escHTML(b.note)}</div>`:''}
@@ -2535,7 +2535,7 @@ function openBeanDetail(id) {
   // 詳細情報グリッド
   const infoItems = [
     { key: '地域 / 農園', val: b.region },
-    { key: '標高', val: b.altitude ? b.altitude+' masl' : null },
+    { key: '標高', val: b.altitude ? b.altitude+' m' : null },
     { key: 'ロースター', val: b.roaster },
     { key: '焙煎日', val: roastDays !== null ? `${b.roastDate}（${roastDays}日前）` : b.roastDate || null },
   ].filter(x => x.val);
