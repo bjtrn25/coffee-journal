@@ -922,7 +922,8 @@ textarea{resize:none;height:60px;line-height:1.6;}
       <button class="modal-close" onclick="closeEntryDetail()" style="position:static;flex-shrink:0;">×</button>
     </div>
     <div class="entry-detail-section">
-      <div class="entry-meta" id="ed-tags"></div>
+      <div class="entry-meta" id="ed-tags-row1"></div>
+      <div class="entry-meta" style="margin-top:6px;" id="ed-tags-row2"></div>
     </div>
     <div class="entry-detail-section" id="ed-flavors-wrap">
       <div class="entry-meta" id="ed-flavors"></div>
@@ -2722,13 +2723,17 @@ function openEntryDetail(id) {
   document.getElementById('ed-name').textContent = e.name;
   const timeStr = e.datetime ? formatDate(new Date(e.datetime.split('T')[0]+'T12:00:00')) + ' ' + formatTime(new Date(e.datetime)) : '';
   document.getElementById('ed-time').textContent = timeStr;
-  // タグ
-  document.getElementById('ed-tags').innerHTML = [`<span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>`,
-    e.variety ? `<span class="tag variety">${escHTML(toEn(e.variety))}</span>` : '',
+  // タグ（1行目：店舗・評価）
+  document.getElementById('ed-tags-row1').innerHTML = [
     e.place ? `<span class="tag">📍 ${escHTML(e.place)}</span>` : '',
+    e.rating ? `<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>` : '',
+  ].join('');
+  // タグ（2行目：Hot/Iced・精製・焙煎度・品種）
+  document.getElementById('ed-tags-row2').innerHTML = [
+    `<span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>`,
     e.process ? `<span class="tag process">${escHTML(toEn(e.process))}</span>` : '',
     e.roastLevel ? `<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>` : '',
-    e.rating ? `<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>` : '',
+    e.variety ? `<span class="tag variety">${escHTML(toEn(e.variety))}</span>` : '',
   ].join('');
   // フレーバー
   const flavWrap = document.getElementById('ed-flavors-wrap');
