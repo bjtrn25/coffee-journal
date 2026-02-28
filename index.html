@@ -1864,37 +1864,7 @@ function drawShareCard(e) {
   ctx.fill();
   ctx.restore();
 
-  // --- ロゴマーク (circle) ---
-  ctx.save();
-  ctx.fillStyle = theme.accent;
-  ctx.beginPath();
-  ctx.arc(52, 52, 22, 0, Math.PI * 2);
-  ctx.fill();
-  // draw simple coffee cup icon
-  ctx.strokeStyle = theme.bg[0];
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  // cup body
-  ctx.beginPath();
-  ctx.moveTo(40, 44);
-  ctx.lineTo(42, 58);
-  ctx.quadraticCurveTo(52, 62, 62, 58);
-  ctx.lineTo(64, 44);
-  ctx.closePath();
-  ctx.stroke();
-  // handle
-  ctx.beginPath();
-  ctx.arc(66, 50, 5, -Math.PI/2, Math.PI/2);
-  ctx.stroke();
-  ctx.restore();
-
-  // --- アプリ名 ---
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font = '500 12px "Noto Sans JP", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('Coffee Journal', 82, 52);
+  // ロゴ・アプリ名は削除（右下に移動）
 
   // --- 焙煎度バッジ（焙煎度があれば表示） ---
   if (e.roastLevel) {
@@ -2045,6 +2015,21 @@ function drawShareCard(e) {
       ctx.fillStyle = i <= e.rating ? theme.accent : 'rgba(255,255,255,0.2)';
       ctx.fillText('★', 48 + (i - 1) * 24, starY);
     }
+  }
+
+  // --- 右下: Coffee Journal ブランディング ---
+  {
+    const brandFontSize = 12;
+    ctx.font = `500 ${brandFontSize}px "Noto Sans JP", sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    // "Coffee Journal"
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('Coffee Journal', W - 48, H - 38);
+    // "made by Shino Tsubakino"
+    ctx.font = `400 10px "Noto Sans JP", sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillText('made by Shino Tsubakino', W - 48, H - 22);
   }
 
   // --- 右側: コーヒー画像（あれば） ---
