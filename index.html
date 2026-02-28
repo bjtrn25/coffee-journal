@@ -2782,18 +2782,19 @@ function renderArchive() {
       <div class="month-entry-row entry" onclick="openEntryDetail('${e.id}')">
         <div class="bullet">${archBullet}</div>
         <div class="entry-body" style="padding-right:48px">
-          <div class="entry-top">
-            <span class="entry-name">${escHTML(e.name)}</span>
-            <span class="entry-time">${e.datetime?formatTime(new Date(e.datetime)):''}</span>
+          <div class="entry-top" style="flex-wrap:nowrap;align-items:flex-start;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;">
+              <span class="entry-name">${escHTML(e.name)}</span>
+              ${e.place?`<span class="tag" style="font-size:9px;white-space:nowrap;">📍 ${escHTML(e.place)}</span>`:''}
+              ${e.rating?`<span class="entry-rating" style="font-size:12px;white-space:nowrap;">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+            </div>
           </div>
-          <div class="entry-meta">
-            ${e.place?`<span class="tag">📍 ${escHTML(e.place)}</span>`:''}
-            ${e.variety?`<span class="tag variety">${escHTML(toEn(e.variety))}</span>`:''}
-            ${e.process?`<span class="tag process">${escHTML(toEn(e.process))}</span>`:''}
-            ${e.roastLevel?`<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>`:''}
-            ${e.rating?`<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>`:''}
+          <div style="margin-top:4px;display:flex;flex-direction:column;gap:3px;">
+            ${e.process?`<div><span class="tag process">${escHTML(toEn(e.process))}</span></div>`:''}
+            ${e.roastLevel?`<div><span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span></div>`:''}
+            ${e.variety?`<div><span class="tag variety">${escHTML(toEn(e.variety))}</span></div>`:''}
+            ${(e.flavors||[]).length?`<div class="entry-meta" style="margin-bottom:0;">${e.flavors.slice(0,5).map(f=>`<span class="tag flavor">${escHTML(toEn(f))}</span>`).join('')}${e.flavors.length>5?`<span class="tag flavor">+${e.flavors.length-5}</span>`:''}</div>`:''}
           </div>
-          ${(e.flavors||[]).length?`<div class="entry-meta">${e.flavors.slice(0,4).map(f=>`<span class="tag flavor">${escHTML(toEn(f))}</span>`).join('')}${e.flavors.length>4?`<span class="tag flavor">+${e.flavors.length-4}</span>`:''}</div>`:''}
           ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
         </div>
         <div class="entry-actions">
