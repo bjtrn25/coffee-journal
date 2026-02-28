@@ -2133,95 +2133,13 @@ function openSiteShareModal() {
 function drawSiteShareCard() {
   const canvas = document.getElementById('siteShareCanvas');
   if (!canvas) return;
-  const W = 800, H = 500;
+  const W = 1376, H = 768;
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-
-  // Background gradient
-  const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#052D57');
-  grad.addColorStop(0.6, '#0a3d6e');
-  grad.addColorStop(1, '#0d4a85');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // Decorative circles
-  ctx.save();
-  ctx.globalAlpha = 0.07;
-  ctx.fillStyle = '#FFBD00';
-  ctx.beginPath(); ctx.arc(W - 60, -60, 220, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(-50, H + 30, 180, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(W / 2, H + 100, 140, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-
-  // Coffee cup icon (circle bg)
-  ctx.save();
-  ctx.fillStyle = '#FFBD00';
-  ctx.beginPath(); ctx.arc(72, 72, 38, 0, Math.PI * 2); ctx.fill();
-  // Cup icon (simple SVG-like path)
-  ctx.fillStyle = '#052D57';
-  ctx.font = 'bold 30px serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('CJ', 72, 72);
-  ctx.restore();
-
-  // App name
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 30px "Noto Sans JP", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('Coffee Journal', 126, 62);
-
-  // Tagline (Japanese)
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.font = '15px "Noto Sans JP", sans-serif';
-  ctx.fillText('あなただけのコーヒーテイスティング記録アプリ', 126, 90);
-
-  // Divider
-  ctx.strokeStyle = 'rgba(255,189,0,0.35)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(48, 128);
-  ctx.lineTo(W - 48, 128);
-  ctx.stroke();
-
-  // Feature bullets (Japanese)
-  const features = [
-    '一杯ごとにフレーバーノートと評価を記録',
-    '焙煎度・品種・プロセスで自分の好みを分析',
-    'アーカイブで過去の記録をいつでも振り返り',
-    'Googleアカウントでどこからでも同期',
-  ];
-  ctx.font = '17px "Noto Sans JP", sans-serif';
-  features.forEach((f, i) => {
-    const y = 168 + i * 52;
-    // bullet dot
-    ctx.fillStyle = '#FFBD00';
-    ctx.beginPath(); ctx.arc(64, y, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(f, 86, y);
-  });
-
-  // Bottom bar
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(0, H - 72, W, 72);
-
-  // Instagram label
-  ctx.fillStyle = '#FFBD00';
-  ctx.font = 'bold 15px "Noto Sans JP", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('制作: @tsubaki_no', 56, H - 36);
-
-  // URL
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.font = '13px monospace';
-  ctx.textAlign = 'right';
-  ctx.fillText(SITE_URL, W - 48, H - 36);
+  const img = new Image();
+  img.onload = () => { ctx.drawImage(img, 0, 0, W, H); };
+  img.src = 'ogp.jpg';
 }
 
 function downloadSiteCard() {
