@@ -2817,11 +2817,12 @@ function openEntryDetail(id) {
   const timeStr = e.datetime ? formatDate(new Date(e.datetime.split('T')[0]+'T12:00:00')) + ' ' + formatTime(new Date(e.datetime)) : '';
   document.getElementById('ed-time').textContent = timeStr;
   // タグ
-  document.getElementById('ed-tags').innerHTML = [`<span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>`,
-    e.variety ? `<span class="tag variety">${escHTML(toEn(e.variety))}</span>` : '',
+  document.getElementById('ed-tags').innerHTML = [
     e.place ? `<span class="tag">📍 ${escHTML(e.place)}</span>` : '',
+    `<span class="tag temp-tag">${e.temp==='iced'?'Iced':'Hot'}</span>`,
     e.process ? `<span class="tag process">${escHTML(toEn(e.process))}</span>` : '',
     e.roastLevel ? `<span class="tag roast-tag" data-roast="${escHTML(toEn(e.roastLevel))}">${escHTML(toEn(e.roastLevel))}</span>` : '',
+    e.variety ? `<span class="tag variety">${escHTML(toEn(e.variety))}</span>` : '',
     e.rating ? `<span class="entry-rating">${'★'.repeat(e.rating)}${'☆'.repeat(5-e.rating)}</span>` : '',
   ].join('');
   // フレーバー
