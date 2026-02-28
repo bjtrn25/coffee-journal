@@ -708,7 +708,9 @@ textarea{resize:none;height:60px;line-height:1.6;}
 <!-- LOGIN SCREEN -->
 <div class="screen-overlay hidden" id="loginScreen">
   <div class="login-box">
-    <div class="login-logo">CJ</div>
+    <div class="login-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--yellow)"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+    </div>
     <div class="login-title">Coffee Journal</div>
     <div class="login-sub">Access your coffee records<br>from anywhere</div>
     <button class="google-btn" onclick="signInWithGoogle()">
@@ -769,7 +771,7 @@ textarea{resize:none;height:60px;line-height:1.6;}
   <div class="site-share-modal">
     <div class="site-share-modal-title">Coffee Journal</div>
     <div class="site-share-modal-sub">Share this app with your friends</div>
-    <div class="site-share-qr">
+    <div class="site-share-qr" id="siteShareQRWrap">
       <canvas id="siteShareQR"></canvas>
     </div>
     <div class="site-share-url-row">
@@ -991,7 +993,6 @@ textarea{resize:none;height:60px;line-height:1.6;}
 <header class="header">
   <div class="header-top">
     <div class="header-logo">
-      <div class="header-logo-mark">CJ</div>
       <span class="header-title">Coffee <span>Journal</span></span>
     </div>
     <div class="header-user-row">
@@ -1774,17 +1775,29 @@ function drawShareCard(e) {
   ctx.fill();
   ctx.restore();
 
-  // --- ロゴマーク ---
+  // --- ロゴマーク (circle) ---
   ctx.save();
   ctx.fillStyle = theme.accent;
   ctx.beginPath();
   ctx.arc(52, 52, 22, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = theme.bg[0];
-  ctx.font = 'bold 18px serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('CJ', 52, 53);
+  // draw simple coffee cup icon
+  ctx.strokeStyle = theme.bg[0];
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // cup body
+  ctx.beginPath();
+  ctx.moveTo(40, 44);
+  ctx.lineTo(42, 58);
+  ctx.quadraticCurveTo(52, 62, 62, 58);
+  ctx.lineTo(64, 44);
+  ctx.closePath();
+  ctx.stroke();
+  // handle
+  ctx.beginPath();
+  ctx.arc(66, 50, 5, -Math.PI/2, Math.PI/2);
+  ctx.stroke();
   ctx.restore();
 
   // --- アプリ名 ---
@@ -2021,12 +2034,23 @@ function openSiteShareModal() {
   overlay.classList.remove('hidden');
   // QRコード生成
   const canvas = document.getElementById('siteShareQR');
+  const qrWrap = document.getElementById('siteShareQRWrap');
   if (typeof QRCode !== 'undefined') {
+    canvas.style.display = 'block';
+    if (qrWrap) qrWrap.style.display = 'flex';
     QRCode.toCanvas(canvas, SITE_URL, {
       width: 180,
       margin: 2,
       color: { dark: '#052D57', light: '#ffffff' }
-    }, (err) => { if (err) console.error(err); });
+    }, (err) => {
+      if (err) {
+        console.error(err);
+        if (qrWrap) qrWrap.style.display = 'none';
+      }
+    });
+  } else {
+    // QRライブラリが読み込まれていない場合はQRエリアを非表示
+    if (qrWrap) qrWrap.style.display = 'none';
   }
   // ESCキーで閉じる
   document._siteShareKeyHandler = (e) => { if (e.key === 'Escape') closeSiteShareModal(); };
