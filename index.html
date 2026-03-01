@@ -1668,7 +1668,11 @@ function resetForm() {
   const n = new Date(); n.setMinutes(n.getMinutes()-n.getTimezoneOffset());
   document.getElementById('f-datetime').value = n.toISOString().slice(0,16);
 }
-document.getElementById('f-name').addEventListener('keydown', e => { if(e.key === 'Enter') addEntry(); });
+// Enterキーでフォーム送信されないよう全テキスト入力フィールドに抑制を設定
+['f-name','f-place','f-altitude'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('keydown', ev => { if (ev.key === 'Enter') ev.preventDefault(); });
+});
 
 // ══════════════════════════════
 //  FLAVOR UI
