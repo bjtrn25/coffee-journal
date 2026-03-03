@@ -2290,6 +2290,16 @@ function renderJournal() {
     s.addEventListener('mouseover', () => { const sid=s.dataset.esid; document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=+s.dataset.sv)); });
     s.addEventListener('mouseout', () => { const sid=s.dataset.esid; let cur=0; document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>{if(x.classList.contains('active'))cur=Math.max(cur,+x.dataset.sv);}); document.querySelectorAll(`[data-esid="${sid}"]`).forEach(x=>x.classList.toggle('active',+x.dataset.sv<=cur)); });
   });
+  // bind entry image lightbox (JS方式でBase64画像でも確実に動作)
+  document.querySelectorAll('.entry-img[data-entry-id]').forEach(img => {
+    img.addEventListener('click', ev => {
+      ev.stopPropagation();
+      const entryId = img.dataset.entryId;
+      const imgIdx = parseInt(img.dataset.imgIdx, 10);
+      const entry = entries.find(x => x.id === entryId);
+      if (entry && entry.images) openLightbox(entry.images, imgIdx);
+    });
+  });
 }
 
 function renderEntryCard(e) {
@@ -2391,7 +2401,7 @@ function renderEntryCard(e) {
       ${roastDays!==null?`<div class="entry-detail">Roasted: <span>${e.roastDate} (${roastDays}d ago)</span></div>`:''}
       ${e.altitude?`<div class="entry-detail">Altitude: <span>${e.altitude} m</span></div>`:''}
       ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
-      ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="event.stopPropagation();openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
+      ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" data-entry-id="${e.id}" data-img-idx="${i}">`).join('')}</div>`:''}
     </div>
     <div class="entry-actions">
       <button class="icon-btn share" onclick="openShareModal('${e.id}')" title="Share">↗</button>
