@@ -2272,12 +2272,21 @@ function renderJournal() {
       : `<div class="empty"><div class="empty-icon"></div>No records yet.<br>Log your first cup!</div>`;
     list.innerHTML = emptyMsg;
   } else {
+    // 日付順にソートして最新5件のみ表示
+    const sorted = [...filtered].sort((a,b)=>(b.datetime||'').localeCompare(a.datetime||''));
+    const JOURNAL_LIMIT = 5;
+    const shown = sorted.slice(0, JOURNAL_LIMIT);
+    const hasMore = sorted.length > JOURNAL_LIMIT;
     const groups = {};
-    filtered.forEach(e => { const d=(e.datetime||'').split('T')[0]; (groups[d]=groups[d]||[]).push(e); });
-    list.innerHTML = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date => {
+    shown.forEach(e => { const d=(e.datetime||'').split('T')[0]; (groups[d]=groups[d]||[]).push(e); });
+    const cardsHtml = Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date => {
       const label = formatDate(new Date(date+'T12:00:00'));
       return `<div class="date-group"><div class="date-label"><span>${label}</span></div>${groups[date].map(renderEntryCard).join('')}</div>`;
     }).join('');
+    const seeMoreHtml = hasMore
+      ? `<div style="text-align:center;margin:12px 0 4px;"><button onclick="showPage('archive')" style="background:none;border:none;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;padding:8px 20px;border-radius:20px;border:1.5px solid var(--border);transition:all .15s;font-family:inherit;">See more in Archive &rsaquo;</button></div>`
+      : '';
+    list.innerHTML = cardsHtml + seeMoreHtml;
   }
   document.getElementById('stat-total').textContent = entries.length;
   document.getElementById('stat-today').textContent = entries.filter(e=>(e.datetime||'').startsWith(today)).length;
