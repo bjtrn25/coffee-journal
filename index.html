@@ -2391,7 +2391,7 @@ function renderEntryCard(e) {
       ${roastDays!==null?`<div class="entry-detail">Roasted: <span>${e.roastDate} (${roastDays}d ago)</span></div>`:''}
       ${e.altitude?`<div class="entry-detail">Altitude: <span>${e.altitude} m</span></div>`:''}
       ${e.note?`<div class="entry-note">${escHTML(e.note)}</div>`:''}
-      ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
+      ${(e.images&&e.images.length)?`<div class="entry-images">${e.images.map((src,i)=>`<img class="entry-img" src="${src}" onclick="event.stopPropagation();openLightbox(${JSON.stringify(e.images)},${i})">`).join('')}</div>`:''}
     </div>
     <div class="entry-actions">
       <button class="icon-btn share" onclick="openShareModal('${e.id}')" title="Share">↗</button>
@@ -2695,7 +2695,7 @@ function openEntryDetail(id) {
   if (e.images && e.images.length) {
     imagesWrap.style.display = 'block';
     document.getElementById('ed-images').innerHTML = e.images.map((src,i)=>
-      `<img class="entry-detail-img" src="${src}" onclick="openLightbox(${JSON.stringify(e.images)},${i})" alt="">`
+      `<img class="entry-detail-img" src="${src}" onclick="event.stopPropagation();openLightbox(${JSON.stringify(e.images)},${i})" alt="">`
     ).join('');
   } else { imagesWrap.style.display = 'none'; }
   // 豆情報
