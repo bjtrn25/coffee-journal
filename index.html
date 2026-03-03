@@ -2705,8 +2705,16 @@ function openEntryDetail(id) {
   if (e.images && e.images.length) {
     imagesWrap.style.display = 'block';
     document.getElementById('ed-images').innerHTML = e.images.map((src,i)=>
-      `<img class="entry-detail-img" src="${src}" onclick="event.stopPropagation();openLightbox(${JSON.stringify(e.images)},${i})" alt="">`
+      `<img class="entry-detail-img" src="${src}" data-img-idx="${i}" alt="">`
     ).join('');
+    // JS方式でイベントバインド（Base64画像でも確実に動作）
+    document.querySelectorAll('#ed-images .entry-detail-img').forEach(img => {
+      img.addEventListener('click', ev => {
+        ev.stopPropagation();
+        const idx = parseInt(img.dataset.imgIdx, 10);
+        openLightbox(e.images, idx);
+      });
+    });
   } else { imagesWrap.style.display = 'none'; }
   // 豆情報
   const beanWrap = document.getElementById('ed-bean-wrap');
