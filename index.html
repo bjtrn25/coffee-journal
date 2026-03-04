@@ -1083,7 +1083,7 @@ textarea{resize:none;height:60px;line-height:1.6;}
     <div class="form-row">
       <div class="form-group"><label>Place / Cafe</label><input type="text" id="f-place" placeholder="e.g. Blue Bottle Shibuya"></div>
       <div class="form-group"><label>Variety</label>
-        <select id="f-variety">
+        <select id="f-variety" onchange="toggleOtherInput('f-variety','f-variety-other')">
           <option value="">— Unselected —</option>
           <option>Geisha</option><option>Bourbon</option><option>Typica</option>
           <option>Caturra</option><option>Catuai</option><option>Pacamara</option>
@@ -1092,26 +1092,29 @@ textarea{resize:none;height:60px;line-height:1.6;}
           <option>S795</option><option>Laurina</option><option>Villa Sarchi</option>
           <option>Heirloom (Harar)</option><option>Jimma</option><option>74110</option>
           <option>74112</option><option>Ruiru 11</option><option>Batian</option>
-          <option>Colombia</option><option>Criollo</option><option>Other</option>
+          <option>Colombia</option><option>Criollo</option><option value="__other__">Other (free input)...</option>
         </select>
+        <input type="text" id="f-variety-other" placeholder="Enter variety name" style="display:none;margin-top:5px;">
       </div>
     </div>
     <div class="form-row three">
       <div class="form-group"><label>Process</label>
-        <select id="f-process">
+        <select id="f-process" onchange="toggleOtherInput('f-process','f-process-other')">
           <option value="">— Unselected —</option>
           <option>Washed</option><option>Natural</option>
           <option>Honey / Pulped Natural</option><option>Anaerobic</option>
-          <option>Wet-Hulled</option><option>Other</option>
+          <option>Wet-Hulled</option><option value="__other__">Other (free input)...</option>
         </select>
+        <input type="text" id="f-process-other" placeholder="Enter process name" style="display:none;margin-top:5px;">
       </div>
       <div class="form-group"><label>Roast Level</label>
-        <select id="f-roast-level">
+        <select id="f-roast-level" onchange="toggleOtherInput('f-roast-level','f-roast-level-other')">
           <option value="">— Unselected —</option>
           <option>Light</option><option>Cinnamon</option><option>Medium</option>
           <option>High</option><option>City</option><option>Full City</option>
-          <option>French</option><option>Italian</option>
+          <option>French</option><option>Italian</option><option value="__other__">Other (free input)...</option>
         </select>
+        <input type="text" id="f-roast-level-other" placeholder="Enter roast level" style="display:none;margin-top:5px;">
       </div>
       <div class="form-group"><label>Roast Date</label><input type="date" id="f-roast-date"></div>
     </div>
@@ -1445,10 +1448,10 @@ async function addEntry() {
     name, temp,
     place: document.getElementById('f-place').value.trim(),
     drunk_at: dt ? new Date(dt).toISOString() : new Date().toISOString(),
-    process: document.getElementById('f-process').value,
-    roast_level: document.getElementById('f-roast-level').value,
+    process: getSelectValue('f-process','f-process-other'),
+    roast_level: getSelectValue('f-roast-level','f-roast-level-other'),
     roast_date: document.getElementById('f-roast-date').value || null,
-    variety: document.getElementById('f-variety').value,
+    variety: getSelectValue('f-variety','f-variety-other'),
     altitude: document.getElementById('f-altitude').value || null,
     flavors: [...selectedFlavors],
     images: pendingImages.map(i => i.dataUrl),
@@ -1656,9 +1659,34 @@ function autofillFromBean() {
   if (!document.getElementById('f-altitude').value) document.getElementById('f-altitude').value = b.altitude || '';
 }
 
+// Other選択時にフリー入力欄を表示/非表示
+function toggleOtherInput(selectId, inputId) {
+  const sel = document.getElementById(selectId);
+  const inp = document.getElementById(inputId);
+  if (!sel || !inp) return;
+  if (sel.value === '__other__') {
+    inp.style.display = 'block';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
+  }
+}
+// selectの値を取得（Otherの場合はフリー入力値を返す）
+function getSelectValue(selectId, inputId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return '';
+  if (sel.value === '__other__') {
+    const inp = document.getElementById(inputId);
+    return inp ? inp.value.trim() : '';
+  }
+  return sel.value;
+}
+
 function resetForm() {
   ['f-name','f-place','f-note','f-roast-date'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   ['f-process','f-roast-level','f-bean-ref','f-variety'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-variety-other','f-process-other','f-roast-level-other'].forEach(id => { const el=document.getElementById(id); if(el){ el.value=''; el.style.display='none'; } });
   const alt = document.getElementById('f-altitude'); if(alt) alt.value = '';
   pendingImages = [];
   const prev = document.getElementById('f-img-preview'); if(prev) prev.innerHTML = '';
